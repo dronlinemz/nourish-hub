@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
-import { ShoppingCart, Star, BadgeCheck } from "lucide-react";
+import { ShoppingCart, BadgeCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { useCart } from "@/contexts/CartContext";
 import { useStore } from "@/contexts/StoreContext";
 import type { Product } from "@/types/store";
@@ -28,55 +27,55 @@ const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   return (
-    <Link to={`/produto/${product.id}`}>
-      <Card className="group overflow-hidden hover:shadow-lg transition-shadow duration-200 h-full flex flex-col">
-        <div className="aspect-square overflow-hidden bg-muted relative">
+    <Link to={`/produto/${product.id}`} className="group">
+      <div className="bg-card rounded-xl border border-border/60 overflow-hidden hover:shadow-xl hover:shadow-foreground/5 hover:border-border transition-all duration-300 h-full flex flex-col">
+        <div className="aspect-[4/3] overflow-hidden bg-muted relative">
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-500 ease-out"
             loading="lazy"
           />
           {product.originalPrice && (
-            <div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs font-bold px-2 py-1 rounded">
+            <div className="absolute top-3 left-3 bg-destructive text-destructive-foreground text-xs font-bold px-2.5 py-1 rounded-lg shadow-sm">
               -{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
             </div>
           )}
         </div>
 
         <div className="p-4 flex flex-col flex-1">
-          <h3 className="font-display font-semibold text-sm line-clamp-2 mb-1 text-foreground">
-            {product.name}
-          </h3>
-
           {supplier && (
-            <div className="flex items-center gap-1 mb-2">
-              {supplier.verified && <BadgeCheck className="w-3.5 h-3.5 text-primary" />}
-              <span className="text-xs text-muted-foreground">{supplier.name}</span>
+            <div className="flex items-center gap-1.5 mb-2">
+              {supplier.verified && <BadgeCheck className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
+              <span className="text-xs text-muted-foreground truncate">{supplier.name}</span>
             </div>
           )}
 
-          <div className="mt-auto flex items-end justify-between pt-2">
-            <div>
-              <span className="font-display font-bold text-lg text-foreground">
-                {formatPrice(product.price)}
-              </span>
+          <h3 className="font-display font-semibold text-sm leading-snug line-clamp-2 mb-3 text-foreground group-hover:text-primary transition-colors duration-200">
+            {product.name}
+          </h3>
+
+          <div className="mt-auto flex items-end justify-between pt-1">
+            <div className="flex flex-col">
               {product.originalPrice && (
-                <span className="text-xs text-muted-foreground line-through ml-1">
+                <span className="text-xs text-muted-foreground line-through mb-0.5">
                   {formatPrice(product.originalPrice)}
                 </span>
               )}
+              <span className="font-display font-bold text-lg leading-none text-foreground">
+                {formatPrice(product.price)}
+              </span>
             </div>
             <Button
-              size="sm"
+              size="icon"
               onClick={handleAddToCart}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              className="h-9 w-9 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md transition-all duration-200"
             >
-              <ShoppingCart className="w-3.5 h-3.5" />
+              <ShoppingCart className="w-4 h-4" />
             </Button>
           </div>
         </div>
-      </Card>
+      </div>
     </Link>
   );
 };
