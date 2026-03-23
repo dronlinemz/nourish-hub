@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
 import ProductCard from "@/components/ProductCard";
+import PartnerBanner from "@/components/PartnerBanner";
 import { useStore } from "@/contexts/StoreContext";
 import { useCart } from "@/contexts/CartContext";
 import { CATEGORY_LABELS } from "@/types/store";
