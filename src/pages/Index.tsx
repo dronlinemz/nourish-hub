@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Search, TrendingUp, ArrowRight, Sparkles } from "lucide-react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { Search, TrendingUp, ArrowRight, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
@@ -9,6 +9,41 @@ import StoreFooter from "@/components/StoreFooter";
 import { useStore } from "@/contexts/StoreContext";
 import type { Category } from "@/types/store";
 import { Link } from "react-router-dom";
+
+const HERO_SLIDES = [
+  {
+    id: 1,
+    title: "Saúde e Bem-Estar",
+    highlight: "ao seu Alcance",
+    subtitle: "Produtos verificados de fornecedores confiáveis. Alimentação saudável, suplementos e muito mais.",
+    bg: "https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=1400&h=600&fit=crop",
+    badge: "Marketplace de Saúde",
+  },
+  {
+    id: 2,
+    title: "Suplementos Premium",
+    highlight: "para o seu Treino",
+    subtitle: "Proteínas, vitaminas e minerais dos melhores fornecedores de Moçambique.",
+    bg: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1400&h=600&fit=crop",
+    badge: "Parceiro: NutriVida",
+  },
+  {
+    id: 3,
+    title: "Equipamento Médico",
+    highlight: "Certificado e Acessível",
+    subtitle: "Kits de primeiros socorros, oxímetros e balanças inteligentes com entrega rápida.",
+    bg: "https://images.unsplash.com/photo-1631815588090-d4bfec5b1ccb?w=1400&h=600&fit=crop",
+    badge: "Parceiro: MedSupply",
+  },
+  {
+    id: 4,
+    title: "Alimentação Orgânica",
+    highlight: "Directo do Campo",
+    subtitle: "Granola, mel puro, sementes de chia e outros produtos naturais sem aditivos.",
+    bg: "https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=1400&h=600&fit=crop",
+    badge: "Parceiro: Orgânico do Campo",
+  },
+];
 
 const Index = () => {
   const { products } = useStore();
