@@ -6,6 +6,7 @@ import ProductCard from "@/components/ProductCard";
 import CategoryFilter from "@/components/CategoryFilter";
 import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
+import PartnerBanner from "@/components/PartnerBanner";
 import { useStore } from "@/contexts/StoreContext";
 import type { Category } from "@/types/store";
 import { Link } from "react-router-dom";
