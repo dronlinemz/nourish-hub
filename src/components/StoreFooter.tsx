@@ -1,32 +1,9 @@
 import { Link } from "react-router-dom";
-import { Phone, Mail, MapPin, Shield, Truck, CreditCard } from "lucide-react";
+import { Phone, Mail, MapPin } from "lucide-react";
 
 const StoreFooter = () => {
   return (
     <footer className="bg-secondary text-secondary-foreground mt-auto">
-      {/* Trust strip */}
-      <div className="border-b border-secondary-foreground/10">
-        <div className="container py-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { icon: <Shield className="w-5 h-5 text-primary" />, title: "Produtos Verificados", desc: "Fornecedores certificados" },
-              { icon: <Truck className="w-5 h-5 text-primary" />, title: "Entrega Nacional", desc: "Em todo Moçambique" },
-              { icon: <CreditCard className="w-5 h-5 text-primary" />, title: "Pagamento Seguro", desc: "M-Pesa & Transferência" },
-            ].map((item) => (
-              <div key={item.title} className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-secondary-foreground/10 flex items-center justify-center flex-shrink-0">
-                  {item.icon}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">{item.title}</p>
-                  <p className="text-xs text-secondary-foreground/60">{item.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       <div className="container py-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
