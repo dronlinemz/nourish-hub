@@ -139,6 +139,9 @@ const ProductDetail = () => {
             </div>
           </section>
         )}
+
+        {/* Partner Ad */}
+        <PartnerBanner variant="wide" className="mt-10" />
       </main>
       <StoreFooter />
     </div>

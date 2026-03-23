@@ -174,6 +174,9 @@ const Index = () => {
       </section>
 
       <main className="container flex-1 py-10">
+        {/* Partner Ad Banner */}
+        <PartnerBanner variant="wide" className="mb-10" />
+
         {/* Featured */}
         {!search && !selectedCategory && featuredProducts.length > 0 && (
           <section className="mb-12 animate-fade-in">

@@ -104,6 +104,9 @@ const CartPage = () => {
             </Link>
           </Card>
         </div>
+
+        {/* Partner Ad */}
+        <PartnerBanner variant="compact" className="mt-8" />
       </main>
       <StoreFooter />
     </div>
