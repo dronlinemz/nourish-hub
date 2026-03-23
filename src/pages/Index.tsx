@@ -70,35 +70,95 @@ const Index = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <StoreHeader />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-secondary via-secondary to-secondary/90">
-        {/* Decorative circles */}
-        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -bottom-32 -left-32 w-80 h-80 rounded-full bg-primary/5 blur-3xl" />
-        
-        <div className="container relative py-16 md:py-20">
-          <div className="max-w-2xl animate-fade-in-up">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary-foreground/10 text-secondary-foreground/90 text-xs font-medium mb-5">
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-              Marketplace de Saúde e Bem-Estar
-            </div>
-            <h1 className="text-3xl md:text-5xl font-display font-extrabold text-secondary-foreground mb-4 leading-[1.15] text-balance">
-              Saúde e Bem-Estar{" "}
-              <span className="text-primary">ao seu Alcance</span>
-            </h1>
-            <p className="text-secondary-foreground/70 text-base md:text-lg mb-8 max-w-lg leading-relaxed">
-              Produtos verificados de fornecedores confiáveis. Alimentação saudável, suplementos, equipamento médico e muito mais.
-            </p>
+      {/* Hero Carousel */}
+      <section className="relative overflow-hidden h-[340px] md:h-[420px]">
+        {/* Slides */}
+        {HERO_SLIDES.map((slide, i) => (
+          <div
+            key={slide.id}
+            className="absolute inset-0 transition-all duration-700 ease-in-out"
+            style={{
+              opacity: currentSlide === i ? 1 : 0,
+              transform: currentSlide === i ? "scale(1)" : "scale(1.05)",
+            }}
+          >
+            {/* Background image */}
+            <img
+              src={slide.bg}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {/* Overlay gradient */}
+            <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/50 to-transparent" />
+          </div>
+        ))}
+
+        {/* Content */}
+        <div className="container relative h-full flex items-center z-10">
+          <div className="max-w-xl">
+            {HERO_SLIDES.map((slide, i) => (
+              <div
+                key={slide.id}
+                className="transition-all duration-500"
+                style={{
+                  opacity: currentSlide === i ? 1 : 0,
+                  transform: currentSlide === i ? "translateY(0)" : "translateY(20px)",
+                  position: currentSlide === i ? "relative" : "absolute",
+                  pointerEvents: currentSlide === i ? "auto" : "none",
+                }}
+              >
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white/90 text-xs font-medium mb-4">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  {slide.badge}
+                </div>
+                <h1 className="text-3xl md:text-5xl font-display font-extrabold text-white mb-3 leading-[1.15] text-balance">
+                  {slide.title}{" "}
+                  <span className="text-primary">{slide.highlight}</span>
+                </h1>
+                <p className="text-white/70 text-sm md:text-base mb-6 max-w-lg leading-relaxed">
+                  {slide.subtitle}
+                </p>
+              </div>
+            ))}
             <div className="relative max-w-md">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Pesquisar produtos..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-11 h-12 bg-card text-card-foreground border-0 rounded-xl shadow-lg shadow-foreground/5 text-sm placeholder:text-muted-foreground/70"
+                className="pl-11 h-12 bg-card/95 backdrop-blur-sm text-card-foreground border-0 rounded-xl shadow-lg shadow-foreground/5 text-sm placeholder:text-muted-foreground/70"
               />
             </div>
           </div>
+        </div>
+
+        {/* Nav arrows */}
+        <button
+          onClick={prevSlide}
+          className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/25 transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <button
+          onClick={nextSlide}
+          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/25 transition-colors"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+
+        {/* Dots */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+          {HERO_SLIDES.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goToSlide(i)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                currentSlide === i
+                  ? "w-6 bg-primary"
+                  : "w-2 bg-white/40 hover:bg-white/60"
+              }`}
+            />
+          ))}
         </div>
       </section>
 
