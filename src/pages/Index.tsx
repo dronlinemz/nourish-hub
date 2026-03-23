@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { Search, TrendingUp, ArrowRight, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, TrendingUp, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Shield, Truck, CreditCard } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
