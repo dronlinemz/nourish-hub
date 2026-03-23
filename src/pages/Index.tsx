@@ -6,6 +6,7 @@ import ProductCard from "@/components/ProductCard";
 import CategoryFilter from "@/components/CategoryFilter";
 import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
+import PartnerBanner from "@/components/PartnerBanner";
 import { useStore } from "@/contexts/StoreContext";
 import type { Category } from "@/types/store";
 import { Link } from "react-router-dom";
@@ -173,6 +174,9 @@ const Index = () => {
       </section>
 
       <main className="container flex-1 py-10">
+        {/* Partner Ad Banner */}
+        <PartnerBanner variant="wide" className="mb-10" />
+
         {/* Featured */}
         {!search && !selectedCategory && featuredProducts.length > 0 && (
           <section className="mb-12 animate-fade-in">

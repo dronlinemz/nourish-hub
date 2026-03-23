@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
 import { useCart } from "@/contexts/CartContext";
+import PartnerBanner from "@/components/PartnerBanner";
 
 const CartPage = () => {
   const { items, removeItem, updateQuantity, total } = useCart();
@@ -103,6 +104,9 @@ const CartPage = () => {
             </Link>
           </Card>
         </div>
+
+        {/* Partner Ad */}
+        <PartnerBanner variant="compact" className="mt-8" />
       </main>
       <StoreFooter />
     </div>
