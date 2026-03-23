@@ -173,13 +173,36 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Trust Strip - moved to top */}
+      <section className="border-b border-border bg-card">
+        <div className="container py-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { icon: <Shield className="w-5 h-5 text-primary" />, title: "Produtos Verificados", desc: "Fornecedores certificados" },
+              { icon: <Truck className="w-5 h-5 text-primary" />, title: "Entrega Nacional", desc: "Em todo Moçambique" },
+              { icon: <CreditCard className="w-5 h-5 text-primary" />, title: "Pagamento Seguro", desc: "M-Pesa & Transferência" },
+            ].map((item) => (
+              <div key={item.title} className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  {item.icon}
+                </div>
+                <div>
+                  <p className="text-sm font-display font-semibold">{item.title}</p>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <main className="container flex-1 py-10">
         {/* Partner Ad Banner */}
         <PartnerBanner variant="wide" className="mb-10" />
 
         {/* Featured */}
         {!search && !selectedCategory && featuredProducts.length > 0 && (
-          <section className="mb-12 animate-fade-in">
+          <section className="mb-14 animate-fade-in">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -197,6 +220,18 @@ const Index = () => {
             </div>
           </section>
         )}
+
+        {/* Divider between sections */}
+        <div className="relative mb-10">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border" />
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-background px-4 text-sm font-display font-semibold text-muted-foreground">
+              Explorar Catálogo
+            </span>
+          </div>
+        </div>
 
         {/* Categories & Products */}
         <section className="animate-fade-in">
