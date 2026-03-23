@@ -49,6 +49,16 @@ const Index = () => {
   const { products } = useStore();
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [search, setSearch] = useState("");
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const nextSlide = useCallback(() => setCurrentSlide((s) => (s + 1) % HERO_SLIDES.length), []);
+  const prevSlide = useCallback(() => setCurrentSlide((s) => (s - 1 + HERO_SLIDES.length) % HERO_SLIDES.length), []);
+  const goToSlide = useCallback((i: number) => setCurrentSlide(i), []);
+
+  useEffect(() => {
+    const timer = setInterval(nextSlide, 5000);
+    return () => clearInterval(timer);
+  }, [nextSlide]);
 
   const featuredProducts = useMemo(
     () => products.filter((p) => p.featured),
