@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   LayoutDashboard, Package, Users, ShoppingBag, ArrowLeft, Plus, Pencil, Trash2,
-  BadgeCheck, Eye, CheckCircle, XCircle, Truck, Star
+  BadgeCheck, CheckCircle, XCircle, Truck, Star, TrendingUp, AlertCircle,
+  BarChart3, DollarSign, Eye, Search
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,15 +32,18 @@ const AdminPage = () => {
   ];
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-background">
       {/* Sidebar */}
-      <aside className="w-64 bg-sidebar text-sidebar-foreground flex-shrink-0 hidden md:flex flex-col">
-        <div className="p-4 border-b border-sidebar-border">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded bg-sidebar-primary flex items-center justify-center">
-              <span className="text-sidebar-primary-foreground font-display font-bold text-xs">Dr</span>
+      <aside className="w-64 bg-sidebar text-sidebar-foreground flex-shrink-0 hidden md:flex flex-col border-r border-sidebar-border">
+        <div className="p-5 border-b border-sidebar-border">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/70 flex items-center justify-center shadow-lg shadow-sidebar-primary/20">
+              <span className="text-sidebar-primary-foreground font-display font-extrabold text-sm">Dr</span>
             </div>
-            <span className="font-display font-bold text-sm">Admin Panel</span>
+            <div>
+              <span className="font-display font-bold text-sm block leading-tight">DrOnline</span>
+              <span className="text-[10px] text-sidebar-foreground/50 font-medium uppercase tracking-wider">Admin Panel</span>
+            </div>
           </div>
         </div>
         <nav className="flex-1 p-3 space-y-1">
@@ -47,10 +51,10 @@ const AdminPage = () => {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                 tab === t.id
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-sidebar-primary/20"
+                  : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
               }`}
             >
               {t.icon} {t.label}
@@ -59,7 +63,7 @@ const AdminPage = () => {
         </nav>
         <div className="p-3 border-t border-sidebar-border">
           <Link to="/">
-            <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground">
+            <Button variant="ghost" size="sm" className="w-full justify-start text-sidebar-foreground/50 hover:text-sidebar-foreground rounded-xl">
               <ArrowLeft className="w-4 h-4 mr-2" /> Voltar à Loja
             </Button>
           </Link>
@@ -67,92 +71,163 @@ const AdminPage = () => {
       </aside>
 
       {/* Mobile Nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-sidebar z-50 border-t border-sidebar-border flex">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-sidebar z-50 border-t border-sidebar-border flex safe-area-bottom">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex-1 flex flex-col items-center py-3 text-xs ${
-              tab === t.id ? "text-sidebar-primary" : "text-sidebar-foreground/60"
+            className={`flex-1 flex flex-col items-center py-3 text-xs transition-colors ${
+              tab === t.id ? "text-sidebar-primary" : "text-sidebar-foreground/50"
             }`}
           >
             {t.icon}
-            <span className="mt-1">{t.label}</span>
+            <span className="mt-1 font-medium">{t.label}</span>
           </button>
         ))}
       </div>
 
       {/* Content */}
-      <main className="flex-1 p-6 md:p-8 overflow-auto pb-20 md:pb-8">
-        {tab === "dashboard" && <DashboardTab />}
-        {tab === "products" && <ProductsTab />}
-        {tab === "suppliers" && <SuppliersTab />}
-        {tab === "orders" && <OrdersTab />}
+      <main className="flex-1 overflow-auto pb-20 md:pb-0">
+        <div className="p-6 md:p-8 max-w-7xl mx-auto">
+          {tab === "dashboard" && <DashboardTab />}
+          {tab === "products" && <ProductsTab />}
+          {tab === "suppliers" && <SuppliersTab />}
+          {tab === "orders" && <OrdersTab />}
+        </div>
       </main>
     </div>
   );
 };
 
+/* ─── Dashboard ─── */
 const DashboardTab = () => {
   const { products, suppliers, orders } = useStore();
   const totalRevenue = orders.filter((o) => o.status !== "cancelled").reduce((s, o) => s + o.total, 0);
+  const pendingOrders = orders.filter((o) => o.status === "pending" || o.status === "payment-submitted").length;
+  const lowStock = products.filter((p) => p.stock < 10).length;
   const formatPrice = (p: number) => new Intl.NumberFormat("pt-MZ", { style: "currency", currency: "MZN" }).format(p);
 
   const stats = [
-    { label: "Produtos", value: products.length, icon: <Package className="w-5 h-5" /> },
-    { label: "Fornecedores", value: suppliers.length, icon: <Users className="w-5 h-5" /> },
-    { label: "Encomendas", value: orders.length, icon: <ShoppingBag className="w-5 h-5" /> },
-    { label: "Receita", value: formatPrice(totalRevenue), icon: <Star className="w-5 h-5" /> },
+    { label: "Produtos", value: products.length, icon: <Package className="w-5 h-5" />, color: "text-primary", bg: "bg-primary/10" },
+    { label: "Fornecedores", value: suppliers.length, icon: <Users className="w-5 h-5" />, color: "text-secondary", bg: "bg-secondary/10" },
+    { label: "Encomendas", value: orders.length, icon: <ShoppingBag className="w-5 h-5" />, color: "text-accent", bg: "bg-accent/10" },
+    { label: "Receita Total", value: formatPrice(totalRevenue), icon: <DollarSign className="w-5 h-5" />, color: "text-primary", bg: "bg-primary/10" },
   ];
 
   return (
-    <div>
-      <h1 className="text-2xl font-display font-bold mb-6">Painel de Controlo</h1>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl md:text-3xl font-display font-bold">Painel de Controlo</h1>
+        <p className="text-muted-foreground text-sm mt-1">Visão geral do seu marketplace</p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s) => (
-          <Card key={s.label} className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              {s.icon}
-              <span className="text-sm">{s.label}</span>
-            </div>
-            <p className="text-2xl font-display font-bold">{s.value}</p>
+          <Card key={s.label} className="relative overflow-hidden">
+            <CardContent className="p-5">
+              <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center ${s.color} mb-3`}>
+                {s.icon}
+              </div>
+              <p className="text-2xl font-display font-bold">{s.value}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
+            </CardContent>
           </Card>
         ))}
       </div>
-      <Card className="p-6">
-        <h2 className="font-display font-bold mb-4">Encomendas Recentes</h2>
-        {orders.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhuma encomenda ainda</p>
-        ) : (
-          <div className="space-y-3">
-            {orders.slice(0, 5).map((o) => (
-              <div key={o.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <div>
-                  <p className="text-sm font-medium">{o.id}</p>
-                  <p className="text-xs text-muted-foreground">{o.customerName} • {new Date(o.createdAt).toLocaleDateString("pt-MZ")}</p>
+
+      {/* Alerts */}
+      {(pendingOrders > 0 || lowStock > 0) && (
+        <div className="grid sm:grid-cols-2 gap-4">
+          {pendingOrders > 0 && (
+            <Card className="border-accent/30 bg-accent/5">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
+                  <AlertCircle className="w-5 h-5" />
                 </div>
-                <Badge variant={o.status === "payment-verified" ? "default" : "secondary"}>
-                  {ORDER_STATUS_LABELS[o.status]}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        )}
+                <div>
+                  <p className="font-display font-semibold text-sm">{pendingOrders} encomendas pendentes</p>
+                  <p className="text-xs text-muted-foreground">A aguardar verificação de pagamento</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {lowStock > 0 && (
+            <Card className="border-destructive/30 bg-destructive/5">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center text-destructive flex-shrink-0">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-display font-semibold text-sm">{lowStock} produtos com stock baixo</p>
+                  <p className="text-xs text-muted-foreground">Menos de 10 unidades disponíveis</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Recent Orders */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-primary" />
+            Encomendas Recentes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {orders.length === 0 ? (
+            <div className="text-center py-10 text-muted-foreground">
+              <ShoppingBag className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">Nenhuma encomenda ainda</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {orders.slice(0, 5).map((o) => (
+                <div key={o.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                      <ShoppingBag className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">{o.customerName}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(o.createdAt).toLocaleDateString("pt-MZ")} • {o.items.length} itens</p>
+                    </div>
+                  </div>
+                  <div className="text-right flex items-center gap-3">
+                    <Badge variant={o.status === "payment-verified" || o.status === "delivered" ? "default" : "secondary"} className="text-[10px]">
+                      {ORDER_STATUS_LABELS[o.status]}
+                    </Badge>
+                    <span className="font-display font-bold text-sm">{formatPrice(o.total)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
       </Card>
     </div>
   );
 };
 
+/* ─── Products ─── */
 const ProductsTab = () => {
   const { products, suppliers, setProducts } = useStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [form, setForm] = useState({
     name: "", description: "", price: "", originalPrice: "", image: "", category: "" as Category | "",
     supplierId: "", stock: "", featured: false,
   });
 
   const formatPrice = (p: number) => new Intl.NumberFormat("pt-MZ", { style: "currency", currency: "MZN" }).format(p);
+
+  const filtered = products.filter((p) =>
+    !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const openNew = () => {
     setEditProduct(null);
@@ -178,15 +253,11 @@ const ProductsTab = () => {
     }
     const data: Product = {
       id: editProduct?.id || `prod-${Date.now()}`,
-      name: form.name,
-      description: form.description,
-      price: Number(form.price),
+      name: form.name, description: form.description, price: Number(form.price),
       originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined,
       image: form.image || "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=400&fit=crop",
-      category: form.category as Category,
-      supplierId: form.supplierId,
-      stock: Number(form.stock) || 0,
-      featured: form.featured,
+      category: form.category as Category, supplierId: form.supplierId,
+      stock: Number(form.stock) || 0, featured: form.featured,
       createdAt: editProduct?.createdAt || new Date().toISOString(),
     };
     if (editProduct) {
@@ -205,29 +276,34 @@ const ProductsTab = () => {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-display font-bold">Produtos</h1>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-display font-bold">Produtos</h1>
+          <p className="text-sm text-muted-foreground">{products.length} produtos no catálogo</p>
+        </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openNew} className="bg-primary text-primary-foreground"><Plus className="w-4 h-4 mr-1" /> Novo Produto</Button>
+            <Button onClick={openNew} className="bg-primary text-primary-foreground rounded-xl shadow-md shadow-primary/20">
+              <Plus className="w-4 h-4 mr-1.5" /> Novo Produto
+            </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editProduct ? "Editar Produto" : "Novo Produto"}</DialogTitle>
+              <DialogTitle className="font-display">{editProduct ? "Editar Produto" : "Novo Produto"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
-              <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+              <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl" /></div>
+              <div><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="rounded-xl" /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>Preço (MZN) *</Label><Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
-                <div><Label>Preço Original</Label><Input type="number" value={form.originalPrice} onChange={(e) => setForm({ ...form, originalPrice: e.target.value })} /></div>
+                <div><Label>Preço (MZN) *</Label><Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="rounded-xl" /></div>
+                <div><Label>Preço Original</Label><Input type="number" value={form.originalPrice} onChange={(e) => setForm({ ...form, originalPrice: e.target.value })} className="rounded-xl" /></div>
               </div>
-              <div><Label>URL da Imagem</Label><Input value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} /></div>
+              <div><Label>URL da Imagem</Label><Input value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} className="rounded-xl" /></div>
               <div>
                 <Label>Categoria *</Label>
                 <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v as Category })}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
                     {(Object.entries(CATEGORY_LABELS) as [Category, string][]).map(([k, v]) => (
                       <SelectItem key={k} value={k}>{v}</SelectItem>
@@ -238,55 +314,81 @@ const ProductsTab = () => {
               <div>
                 <Label>Fornecedor *</Label>
                 <Select value={form.supplierId} onValueChange={(v) => setForm({ ...form, supplierId: v })}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
-                    {suppliers.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))}
+                    {suppliers.map((s) => (<SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>Stock</Label><Input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} /></div>
+                <div><Label>Stock</Label><Input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} className="rounded-xl" /></div>
                 <div className="flex items-end">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} className="w-4 h-4" />
-                    <span className="text-sm">Destaque</span>
+                    <input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} className="w-4 h-4 rounded" />
+                    <span className="text-sm font-medium">Destaque</span>
                   </label>
                 </div>
               </div>
-              <Button onClick={handleSave} className="w-full bg-primary text-primary-foreground">Guardar</Button>
+              <Button onClick={handleSave} className="w-full bg-primary text-primary-foreground rounded-xl">Guardar</Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="space-y-3">
-        {products.map((p) => {
-          const supplier = suppliers.find((s) => s.id === p.supplierId);
-          return (
-            <Card key={p.id} className="flex items-center gap-4 p-4">
-              <img src={p.image} alt={p.name} className="w-14 h-14 rounded-md object-cover" />
-              <div className="flex-1 min-w-0">
-                <p className="font-display font-semibold text-sm truncate">{p.name}</p>
-                <p className="text-xs text-muted-foreground">{supplier?.name} • {CATEGORY_LABELS[p.category]}</p>
-              </div>
-              <span className="font-display font-bold text-sm hidden sm:block">{formatPrice(p.price)}</span>
-              <span className="text-xs text-muted-foreground hidden sm:block">{p.stock} un.</span>
-              <div className="flex gap-1">
-                <Button variant="ghost" size="icon" onClick={() => openEdit(p)}><Pencil className="w-3.5 h-3.5" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-              </div>
-            </Card>
-          );
-        })}
+      {/* Search */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Pesquisar produtos..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 rounded-xl"
+        />
       </div>
+
+      {/* Table-style list */}
+      <Card className="overflow-hidden">
+        <div className="hidden sm:grid grid-cols-[auto_1fr_120px_80px_80px_80px] gap-4 items-center px-5 py-3 bg-muted/50 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <span className="w-10" />
+          <span>Produto</span>
+          <span>Categoria</span>
+          <span className="text-right">Preço</span>
+          <span className="text-center">Stock</span>
+          <span className="text-center">Acções</span>
+        </div>
+        <div className="divide-y divide-border">
+          {filtered.map((p) => {
+            const supplier = suppliers.find((s) => s.id === p.supplierId);
+            return (
+              <div key={p.id} className="grid grid-cols-[auto_1fr_auto] sm:grid-cols-[auto_1fr_120px_80px_80px_80px] gap-4 items-center px-5 py-3 hover:bg-muted/30 transition-colors">
+                <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover" />
+                <div className="min-w-0">
+                  <p className="font-display font-semibold text-sm truncate">{p.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{supplier?.name}</p>
+                </div>
+                <Badge variant="secondary" className="hidden sm:inline-flex text-[10px] w-fit">{CATEGORY_LABELS[p.category]}</Badge>
+                <span className="hidden sm:block font-display font-bold text-sm text-right">{formatPrice(p.price)}</span>
+                <div className="hidden sm:flex justify-center">
+                  <Badge variant={p.stock < 10 ? "destructive" : "secondary"} className="text-[10px]">
+                    {p.stock}
+                  </Badge>
+                </div>
+                <div className="flex gap-1 justify-end sm:justify-center">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => openEdit(p)}><Pencil className="w-3.5 h-3.5" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => handleDelete(p.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
     </div>
   );
 };
 
+/* ─── Suppliers ─── */
 const SuppliersTab = () => {
-  const { suppliers, setSuppliers } = useStore();
+  const { suppliers, products, setSuppliers } = useStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
   const [form, setForm] = useState({
@@ -335,145 +437,189 @@ const SuppliersTab = () => {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-display font-bold">Fornecedores</h1>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-display font-bold">Fornecedores</h1>
+          <p className="text-sm text-muted-foreground">{suppliers.length} fornecedores registados</p>
+        </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openNew} className="bg-primary text-primary-foreground"><Plus className="w-4 h-4 mr-1" /> Novo Fornecedor</Button>
+            <Button onClick={openNew} className="bg-primary text-primary-foreground rounded-xl shadow-md shadow-primary/20">
+              <Plus className="w-4 h-4 mr-1.5" /> Novo Fornecedor
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editSupplier ? "Editar Fornecedor" : "Novo Fornecedor"}</DialogTitle>
+              <DialogTitle className="font-display">{editSupplier ? "Editar Fornecedor" : "Novo Fornecedor"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
-              <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+              <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl" /></div>
+              <div><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="rounded-xl" /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>Email *</Label><Input type="email" value={form.contactEmail} onChange={(e) => setForm({ ...form, contactEmail: e.target.value })} /></div>
-                <div><Label>Telefone</Label><Input value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} /></div>
+                <div><Label>Email *</Label><Input type="email" value={form.contactEmail} onChange={(e) => setForm({ ...form, contactEmail: e.target.value })} className="rounded-xl" /></div>
+                <div><Label>Telefone</Label><Input value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} className="rounded-xl" /></div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>Rating (1-5)</Label><Input type="number" min="1" max="5" step="0.1" value={form.rating} onChange={(e) => setForm({ ...form, rating: e.target.value })} /></div>
+                <div><Label>Rating (1-5)</Label><Input type="number" min="1" max="5" step="0.1" value={form.rating} onChange={(e) => setForm({ ...form, rating: e.target.value })} className="rounded-xl" /></div>
                 <div className="flex items-end">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={form.verified} onChange={(e) => setForm({ ...form, verified: e.target.checked })} className="w-4 h-4" />
-                    <span className="text-sm">Verificado</span>
+                    <input type="checkbox" checked={form.verified} onChange={(e) => setForm({ ...form, verified: e.target.checked })} className="w-4 h-4 rounded" />
+                    <span className="text-sm font-medium">Verificado</span>
                   </label>
                 </div>
               </div>
-              <Button onClick={handleSave} className="w-full bg-primary text-primary-foreground">Guardar</Button>
+              <Button onClick={handleSave} className="w-full bg-primary text-primary-foreground rounded-xl">Guardar</Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-4">
-        {suppliers.map((s) => (
-          <Card key={s.id} className="p-4">
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-display font-bold">{s.name}</h3>
-                  {s.verified && <span className="badge-verified"><BadgeCheck className="w-3 h-3" /> Verificado</span>}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {suppliers.map((s) => {
+          const productCount = products.filter((p) => p.supplierId === s.id).length;
+          return (
+            <Card key={s.id} className="overflow-hidden hover:shadow-md transition-shadow">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary font-display font-bold text-sm">
+                      {s.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="font-display font-bold text-sm">{s.name}</h3>
+                        {s.verified && <BadgeCheck className="w-4 h-4 text-primary" />}
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Star className="w-3 h-3 text-accent fill-accent" />
+                        <span className="text-xs font-medium">{s.rating}</span>
+                        <span className="text-xs text-muted-foreground">• {productCount} produtos</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-0.5">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => openEdit(s)}><Pencil className="w-3.5 h-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => handleDelete(s.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 mt-1">
-                  <Star className="w-3.5 h-3.5 text-accent fill-accent" />
-                  <span className="text-sm">{s.rating}</span>
+                <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{s.description}</p>
+                <Separator className="my-3" />
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <span className="truncate">{s.contactEmail}</span>
+                  <span className="flex-shrink-0">{s.contactPhone}</span>
                 </div>
-              </div>
-              <div className="flex gap-1">
-                <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="w-3.5 h-3.5" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(s.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground mb-2">{s.description}</p>
-            <p className="text-xs text-muted-foreground">{s.contactEmail} • {s.contactPhone}</p>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
 };
 
+/* ─── Orders ─── */
 const OrdersTab = () => {
   const { orders, updateOrderStatus } = useStore();
   const formatPrice = (p: number) => new Intl.NumberFormat("pt-MZ", { style: "currency", currency: "MZN" }).format(p);
 
-  const statusActions: Record<string, { next: OrderStatus; label: string; icon: React.ReactNode }[]> = {
-    "pending": [{ next: "cancelled", label: "Cancelar", icon: <XCircle className="w-3.5 h-3.5" /> }],
+  const statusActions: Record<string, { next: OrderStatus; label: string; icon: React.ReactNode; variant: "default" | "outline" | "destructive" }[]> = {
+    "pending": [{ next: "cancelled", label: "Cancelar", icon: <XCircle className="w-3.5 h-3.5" />, variant: "outline" }],
     "payment-submitted": [
-      { next: "payment-verified", label: "Verificar", icon: <CheckCircle className="w-3.5 h-3.5" /> },
-      { next: "cancelled", label: "Cancelar", icon: <XCircle className="w-3.5 h-3.5" /> },
+      { next: "payment-verified", label: "Verificar Pagamento", icon: <CheckCircle className="w-3.5 h-3.5" />, variant: "default" },
+      { next: "cancelled", label: "Cancelar", icon: <XCircle className="w-3.5 h-3.5" />, variant: "outline" },
     ],
-    "payment-verified": [{ next: "shipped", label: "Enviar", icon: <Truck className="w-3.5 h-3.5" /> }],
-    "shipped": [{ next: "delivered", label: "Entregue", icon: <CheckCircle className="w-3.5 h-3.5" /> }],
+    "payment-verified": [{ next: "shipped", label: "Marcar como Enviado", icon: <Truck className="w-3.5 h-3.5" />, variant: "default" }],
+    "shipped": [{ next: "delivered", label: "Marcar como Entregue", icon: <CheckCircle className="w-3.5 h-3.5" />, variant: "default" }],
+  };
+
+  const statusColor = (status: OrderStatus) => {
+    switch (status) {
+      case "payment-verified": case "delivered": return "default";
+      case "cancelled": return "destructive";
+      default: return "secondary";
+    }
   };
 
   return (
-    <div>
-      <h1 className="text-2xl font-display font-bold mb-6">Encomendas</h1>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl md:text-3xl font-display font-bold">Encomendas</h1>
+        <p className="text-sm text-muted-foreground">{orders.length} encomendas registadas</p>
+      </div>
+
       {orders.length === 0 ? (
-        <Card className="p-8 text-center text-muted-foreground">Nenhuma encomenda registada</Card>
+        <Card className="p-12 text-center">
+          <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-muted-foreground/30" />
+          <p className="font-display font-semibold text-muted-foreground">Nenhuma encomenda registada</p>
+          <p className="text-sm text-muted-foreground/70 mt-1">As encomendas aparecerão aqui quando os clientes fizerem compras</p>
+        </Card>
       ) : (
         <div className="space-y-4">
           {orders.map((o) => (
-            <Card key={o.id} className="p-4">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="font-display font-bold">{o.id}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {o.customerName} • {o.customerPhone} • {new Date(o.createdAt).toLocaleDateString("pt-MZ")}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <Badge variant={o.status === "cancelled" ? "destructive" : o.status === "delivered" ? "default" : "secondary"}>
-                    {ORDER_STATUS_LABELS[o.status]}
-                  </Badge>
-                  <p className="font-display font-bold text-sm mt-1">{formatPrice(o.total)}</p>
-                </div>
-              </div>
-
-              <div className="text-sm text-muted-foreground mb-3">
-                <p>Pagamento: {o.paymentMethod === "mpesa" ? "M-Pesa" : "Transferência Bancária"}</p>
-                {o.paymentProofUrl && (
-                  <a href={o.paymentProofUrl} target="_blank" rel="noreferrer" className="text-primary underline text-xs">
-                    Ver comprovativo
-                  </a>
-                )}
-                <p className="mt-1">Endereço: {o.customerAddress}</p>
-              </div>
-
-              <Separator className="my-3" />
-
-              <div className="space-y-1 mb-3">
-                {o.items.map((item) => (
-                  <div key={item.product.id} className="flex justify-between text-sm">
-                    <span>{item.quantity}x {item.product.name}</span>
-                    <span>{formatPrice(item.product.price * item.quantity)}</span>
+            <Card key={o.id} className="overflow-hidden hover:shadow-md transition-shadow">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                      <ShoppingBag className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-display font-bold text-sm">{o.customerName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {o.customerPhone} • {new Date(o.createdAt).toLocaleDateString("pt-MZ")}
+                      </p>
+                    </div>
                   </div>
-                ))}
-              </div>
+                  <div className="text-right">
+                    <Badge variant={statusColor(o.status)} className="text-[10px]">
+                      {ORDER_STATUS_LABELS[o.status]}
+                    </Badge>
+                    <p className="font-display font-bold mt-1">{formatPrice(o.total)}</p>
+                  </div>
+                </div>
 
-              {statusActions[o.status] && (
-                <div className="flex gap-2">
-                  {statusActions[o.status].map((action) => (
-                    <Button
-                      key={action.next}
-                      variant={action.next === "cancelled" ? "outline" : "default"}
-                      size="sm"
-                      onClick={() => {
-                        updateOrderStatus(o.id, action.next);
-                        toast.success(`Estado alterado para: ${ORDER_STATUS_LABELS[action.next]}`);
-                      }}
-                      className={action.next !== "cancelled" ? "bg-primary text-primary-foreground" : ""}
-                    >
-                      {action.icon}
-                      <span className="ml-1">{action.label}</span>
-                    </Button>
+                <div className="bg-muted/40 rounded-xl p-3 mb-4">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                    <span>Pagamento: {o.paymentMethod === "mpesa" ? "M-Pesa" : "Transferência Bancária"}</span>
+                    {o.paymentProofUrl && (
+                      <a href={o.paymentProofUrl} target="_blank" rel="noreferrer" className="text-primary font-medium hover:underline flex items-center gap-1">
+                        <Eye className="w-3 h-3" /> Ver comprovativo
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Endereço: {o.customerAddress}</p>
+                </div>
+
+                <div className="space-y-1.5 mb-4">
+                  {o.items.map((item) => (
+                    <div key={item.product.id} className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{item.quantity}× {item.product.name}</span>
+                      <span className="font-medium">{formatPrice(item.product.price * item.quantity)}</span>
+                    </div>
                   ))}
                 </div>
-              )}
+
+                {statusActions[o.status] && (
+                  <div className="flex gap-2 pt-3 border-t border-border">
+                    {statusActions[o.status].map((action) => (
+                      <Button
+                        key={action.next}
+                        variant={action.variant}
+                        size="sm"
+                        className="rounded-xl"
+                        onClick={() => {
+                          updateOrderStatus(o.id, action.next);
+                          toast.success(`Estado alterado para: ${ORDER_STATUS_LABELS[action.next]}`);
+                        }}
+                      >
+                        {action.icon}
+                        <span className="ml-1.5">{action.label}</span>
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
             </Card>
           ))}
         </div>

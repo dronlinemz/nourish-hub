@@ -19,7 +19,7 @@ interface CategoryFilterProps {
 
 const CategoryFilter = ({ selected, onChange }: CategoryFilterProps) => {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none -mx-1.5 px-1.5">
+    <div className="flex flex-wrap gap-2">
       <button
         onClick={() => onChange(null)}
         className={`badge-category ${selected === null ? "badge-category-active" : ""}`}
