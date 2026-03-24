@@ -1,14 +1,47 @@
 import React, { createContext, useContext, useState } from "react";
-import type { Product, Supplier, Order } from "@/types/store";
+import type { Product, Supplier, Order, AdCampaign } from "@/types/store";
 import { MOCK_SUPPLIERS, MOCK_PRODUCTS } from "@/data/mockData";
+
+const MOCK_ADS: AdCampaign[] = [
+  {
+    id: "ad-1", partner: "NutriVida Moçambique", title: "20% de desconto em suplementos",
+    description: "Use o código NUTRI20 na sua próxima compra", cta: "Ver Ofertas", url: "#",
+    image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&h=200&fit=crop",
+    space: "hero", status: "active", startDate: "2026-03-01", endDate: "2026-04-30",
+    expectedRevenue: 15000, realizedRevenue: 8500, impressions: 12400, clicks: 340, createdAt: "2026-03-01T00:00:00Z",
+  },
+  {
+    id: "ad-2", partner: "MedSupply Africa", title: "Kits de Primeiros Socorros",
+    description: "Proteja a sua família com equipamento certificado", cta: "Comprar Agora", url: "#",
+    image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&h=200&fit=crop",
+    space: "hero", status: "active", startDate: "2026-03-01", endDate: "2026-05-31",
+    expectedRevenue: 20000, realizedRevenue: 12000, impressions: 18200, clicks: 520, createdAt: "2026-03-01T00:00:00Z",
+  },
+  {
+    id: "ad-3", partner: "Orgânico do Campo", title: "Produtos frescos e orgânicos",
+    description: "Directamente dos produtores locais para a sua mesa", cta: "Explorar", url: "#",
+    image: "https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=800&h=200&fit=crop",
+    space: "catalog-wide", status: "active", startDate: "2026-02-15", endDate: "2026-04-15",
+    expectedRevenue: 10000, realizedRevenue: 6200, impressions: 8900, clicks: 210, createdAt: "2026-02-15T00:00:00Z",
+  },
+  {
+    id: "ad-4", partner: "NutriVida Moçambique", title: "Vitaminas para toda a família",
+    description: "Suplementos com qualidade certificada", cta: "Descobrir", url: "#",
+    image: "https://images.unsplash.com/photo-1505576399279-0d06b1483b8e?w=800&h=200&fit=crop",
+    space: "product-detail", status: "paused", startDate: "2026-03-10", endDate: "2026-06-10",
+    expectedRevenue: 8000, realizedRevenue: 1200, impressions: 3200, clicks: 85, createdAt: "2026-03-10T00:00:00Z",
+  },
+];
 
 interface StoreContextType {
   products: Product[];
   suppliers: Supplier[];
   orders: Order[];
+  adCampaigns: AdCampaign[];
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
+  setAdCampaigns: React.Dispatch<React.SetStateAction<AdCampaign[]>>;
   getSupplier: (id: string) => Supplier | undefined;
   addOrder: (order: Order) => void;
   updateOrderStatus: (orderId: string, status: Order["status"]) => void;
@@ -20,20 +53,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [suppliers, setSuppliers] = useState<Supplier[]>(MOCK_SUPPLIERS);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [adCampaigns, setAdCampaigns] = useState<AdCampaign[]>(MOCK_ADS);
 
   const getSupplier = (id: string) => suppliers.find((s) => s.id === id);
-
   const addOrder = (order: Order) => setOrders((prev) => [order, ...prev]);
-
   const updateOrderStatus = (orderId: string, status: Order["status"]) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status } : o))
-    );
+    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
   };
 
   return (
     <StoreContext.Provider
-      value={{ products, suppliers, orders, setProducts, setSuppliers, setOrders, getSupplier, addOrder, updateOrderStatus }}
+      value={{ products, suppliers, orders, adCampaigns, setProducts, setSuppliers, setOrders, setAdCampaigns, getSupplier, addOrder, updateOrderStatus }}
     >
       {children}
     </StoreContext.Provider>

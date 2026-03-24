@@ -76,3 +76,44 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   "delivered": "Entregue",
   "cancelled": "Cancelado",
 };
+
+/* ─── Advertising ─── */
+
+export type AdSpace = "hero" | "catalog-wide" | "catalog-sidebar" | "product-detail" | "cart-sidebar";
+
+export const AD_SPACE_LABELS: Record<AdSpace, string> = {
+  "hero": "Hero (Banner Principal)",
+  "catalog-wide": "Catálogo (Wide)",
+  "catalog-sidebar": "Catálogo (Sidebar)",
+  "product-detail": "Detalhe Produto",
+  "cart-sidebar": "Carrinho (Sidebar)",
+};
+
+export type AdStatus = "active" | "paused" | "scheduled" | "ended";
+
+export const AD_STATUS_LABELS: Record<AdStatus, string> = {
+  "active": "Activo",
+  "paused": "Pausado",
+  "scheduled": "Agendado",
+  "ended": "Terminado",
+};
+
+export interface AdCampaign {
+  id: string;
+  partner: string;
+  partnerLogo?: string;
+  title: string;
+  description: string;
+  cta: string;
+  url: string;
+  image: string;
+  space: AdSpace;
+  status: AdStatus;
+  startDate: string;
+  endDate: string;
+  expectedRevenue: number;
+  realizedRevenue: number;
+  impressions: number;
+  clicks: number;
+  createdAt: string;
+}
