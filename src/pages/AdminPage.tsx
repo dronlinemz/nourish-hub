@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import {
   LayoutDashboard, Package, Users, ShoppingBag, ArrowLeft, Plus, Pencil, Trash2,
   BadgeCheck, CheckCircle, XCircle, Truck, Star, TrendingUp, AlertCircle,
-  BarChart3, DollarSign, Eye, Search
+  BarChart3, DollarSign, Eye, Search, Megaphone, Play, Pause, Calendar,
+  MousePointerClick, Monitor
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,11 +16,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/contexts/StoreContext";
-import { CATEGORY_LABELS, ORDER_STATUS_LABELS } from "@/types/store";
-import type { Product, Supplier, Category, Order, OrderStatus } from "@/types/store";
+import { CATEGORY_LABELS, ORDER_STATUS_LABELS, AD_SPACE_LABELS, AD_STATUS_LABELS } from "@/types/store";
+import type { Product, Supplier, Category, Order, OrderStatus, AdCampaign, AdSpace, AdStatus } from "@/types/store";
 import { toast } from "sonner";
 
-type Tab = "dashboard" | "products" | "suppliers" | "orders";
+type Tab = "dashboard" | "products" | "suppliers" | "orders" | "ads";
 
 const AdminPage = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -29,6 +30,7 @@ const AdminPage = () => {
     { id: "products", label: "Produtos", icon: <Package className="w-4 h-4" /> },
     { id: "suppliers", label: "Fornecedores", icon: <Users className="w-4 h-4" /> },
     { id: "orders", label: "Encomendas", icon: <ShoppingBag className="w-4 h-4" /> },
+    { id: "ads", label: "Publicidade", icon: <Megaphone className="w-4 h-4" /> },
   ];
 
   return (
@@ -93,43 +95,42 @@ const AdminPage = () => {
           {tab === "products" && <ProductsTab />}
           {tab === "suppliers" && <SuppliersTab />}
           {tab === "orders" && <OrdersTab />}
+          {tab === "ads" && <AdsTab />}
         </div>
       </main>
     </div>
   );
 };
 
+const formatPrice = (p: number) => new Intl.NumberFormat("pt-MZ", { style: "currency", currency: "MZN" }).format(p);
+
 /* ─── Dashboard ─── */
 const DashboardTab = () => {
-  const { products, suppliers, orders } = useStore();
+  const { products, suppliers, orders, adCampaigns } = useStore();
   const totalRevenue = orders.filter((o) => o.status !== "cancelled").reduce((s, o) => s + o.total, 0);
+  const adRevenue = adCampaigns.reduce((s, a) => s + a.realizedRevenue, 0);
   const pendingOrders = orders.filter((o) => o.status === "pending" || o.status === "payment-submitted").length;
   const lowStock = products.filter((p) => p.stock < 10).length;
-  const formatPrice = (p: number) => new Intl.NumberFormat("pt-MZ", { style: "currency", currency: "MZN" }).format(p);
 
   const stats = [
     { label: "Produtos", value: products.length, icon: <Package className="w-5 h-5" />, color: "text-primary", bg: "bg-primary/10" },
     { label: "Fornecedores", value: suppliers.length, icon: <Users className="w-5 h-5" />, color: "text-secondary", bg: "bg-secondary/10" },
-    { label: "Encomendas", value: orders.length, icon: <ShoppingBag className="w-5 h-5" />, color: "text-accent", bg: "bg-accent/10" },
-    { label: "Receita Total", value: formatPrice(totalRevenue), icon: <DollarSign className="w-5 h-5" />, color: "text-primary", bg: "bg-primary/10" },
+    { label: "Receita Vendas", value: formatPrice(totalRevenue), icon: <DollarSign className="w-5 h-5" />, color: "text-primary", bg: "bg-primary/10" },
+    { label: "Receita Publicidade", value: formatPrice(adRevenue), icon: <Megaphone className="w-5 h-5" />, color: "text-accent", bg: "bg-accent/10" },
   ];
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-display font-bold">Painel de Controlo</h1>
         <p className="text-muted-foreground text-sm mt-1">Visão geral do seu marketplace</p>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s) => (
           <Card key={s.label} className="relative overflow-hidden">
             <CardContent className="p-5">
-              <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center ${s.color} mb-3`}>
-                {s.icon}
-              </div>
+              <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center ${s.color} mb-3`}>{s.icon}</div>
               <p className="text-2xl font-display font-bold">{s.value}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{s.label}</p>
             </CardContent>
@@ -137,15 +138,12 @@ const DashboardTab = () => {
         ))}
       </div>
 
-      {/* Alerts */}
       {(pendingOrders > 0 || lowStock > 0) && (
         <div className="grid sm:grid-cols-2 gap-4">
           {pendingOrders > 0 && (
             <Card className="border-accent/30 bg-accent/5">
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
-                  <AlertCircle className="w-5 h-5" />
-                </div>
+                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent flex-shrink-0"><AlertCircle className="w-5 h-5" /></div>
                 <div>
                   <p className="font-display font-semibold text-sm">{pendingOrders} encomendas pendentes</p>
                   <p className="text-xs text-muted-foreground">A aguardar verificação de pagamento</p>
@@ -156,9 +154,7 @@ const DashboardTab = () => {
           {lowStock > 0 && (
             <Card className="border-destructive/30 bg-destructive/5">
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center text-destructive flex-shrink-0">
-                  <TrendingUp className="w-5 h-5" />
-                </div>
+                <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center text-destructive flex-shrink-0"><TrendingUp className="w-5 h-5" /></div>
                 <div>
                   <p className="font-display font-semibold text-sm">{lowStock} produtos com stock baixo</p>
                   <p className="text-xs text-muted-foreground">Menos de 10 unidades disponíveis</p>
@@ -169,13 +165,9 @@ const DashboardTab = () => {
         </div>
       )}
 
-      {/* Recent Orders */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-primary" />
-            Encomendas Recentes
-          </CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2"><BarChart3 className="w-5 h-5 text-primary" /> Encomendas Recentes</CardTitle>
         </CardHeader>
         <CardContent>
           {orders.length === 0 ? (
@@ -188,18 +180,14 @@ const DashboardTab = () => {
               {orders.slice(0, 5).map((o) => (
                 <div key={o.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                      <ShoppingBag className="w-4 h-4" />
-                    </div>
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary"><ShoppingBag className="w-4 h-4" /></div>
                     <div>
                       <p className="text-sm font-semibold">{o.customerName}</p>
                       <p className="text-xs text-muted-foreground">{new Date(o.createdAt).toLocaleDateString("pt-MZ")} • {o.items.length} itens</p>
                     </div>
                   </div>
                   <div className="text-right flex items-center gap-3">
-                    <Badge variant={o.status === "payment-verified" || o.status === "delivered" ? "default" : "secondary"} className="text-[10px]">
-                      {ORDER_STATUS_LABELS[o.status]}
-                    </Badge>
+                    <Badge variant={o.status === "payment-verified" || o.status === "delivered" ? "default" : "secondary"} className="text-[10px]">{ORDER_STATUS_LABELS[o.status]}</Badge>
                     <span className="font-display font-bold text-sm">{formatPrice(o.total)}</span>
                   </div>
                 </div>
@@ -223,11 +211,7 @@ const ProductsTab = () => {
     supplierId: "", stock: "", featured: false,
   });
 
-  const formatPrice = (p: number) => new Intl.NumberFormat("pt-MZ", { style: "currency", currency: "MZN" }).format(p);
-
-  const filtered = products.filter((p) =>
-    !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filtered = products.filter((p) => !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   const openNew = () => {
     setEditProduct(null);
@@ -247,13 +231,9 @@ const ProductsTab = () => {
   };
 
   const handleSave = () => {
-    if (!form.name || !form.price || !form.category || !form.supplierId) {
-      toast.error("Preencha os campos obrigatórios");
-      return;
-    }
+    if (!form.name || !form.price || !form.category || !form.supplierId) { toast.error("Preencha os campos obrigatórios"); return; }
     const data: Product = {
-      id: editProduct?.id || `prod-${Date.now()}`,
-      name: form.name, description: form.description, price: Number(form.price),
+      id: editProduct?.id || `prod-${Date.now()}`, name: form.name, description: form.description, price: Number(form.price),
       originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined,
       image: form.image || "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=400&fit=crop",
       category: form.category as Category, supplierId: form.supplierId,
@@ -270,10 +250,7 @@ const ProductsTab = () => {
     setDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-    toast.success("Produto removido");
-  };
+  const handleDelete = (id: string) => { setProducts((prev) => prev.filter((p) => p.id !== id)); toast.success("Produto removido"); };
 
   return (
     <div className="space-y-6">
@@ -284,14 +261,10 @@ const ProductsTab = () => {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openNew} className="bg-primary text-primary-foreground rounded-xl shadow-md shadow-primary/20">
-              <Plus className="w-4 h-4 mr-1.5" /> Novo Produto
-            </Button>
+            <Button onClick={openNew} className="bg-primary text-primary-foreground rounded-xl shadow-md shadow-primary/20"><Plus className="w-4 h-4 mr-1.5" /> Novo Produto</Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="font-display">{editProduct ? "Editar Produto" : "Novo Produto"}</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle className="font-display">{editProduct ? "Editar Produto" : "Novo Produto"}</DialogTitle></DialogHeader>
             <div className="space-y-4 mt-4">
               <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl" /></div>
               <div><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="rounded-xl" /></div>
@@ -304,20 +277,14 @@ const ProductsTab = () => {
                 <Label>Categoria *</Label>
                 <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v as Category })}>
                   <SelectTrigger className="rounded-xl"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                  <SelectContent>
-                    {(Object.entries(CATEGORY_LABELS) as [Category, string][]).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectContent>{(Object.entries(CATEGORY_LABELS) as [Category, string][]).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}</SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Fornecedor *</Label>
                 <Select value={form.supplierId} onValueChange={(v) => setForm({ ...form, supplierId: v })}>
                   <SelectTrigger className="rounded-xl"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                  <SelectContent>
-                    {suppliers.map((s) => (<SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>))}
-                  </SelectContent>
+                  <SelectContent>{suppliers.map((s) => (<SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>))}</SelectContent>
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -335,26 +302,14 @@ const ProductsTab = () => {
         </Dialog>
       </div>
 
-      {/* Search */}
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Pesquisar produtos..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 rounded-xl"
-        />
+        <Input placeholder="Pesquisar produtos..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl" />
       </div>
 
-      {/* Table-style list */}
       <Card className="overflow-hidden">
         <div className="hidden sm:grid grid-cols-[auto_1fr_120px_80px_80px_80px] gap-4 items-center px-5 py-3 bg-muted/50 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          <span className="w-10" />
-          <span>Produto</span>
-          <span>Categoria</span>
-          <span className="text-right">Preço</span>
-          <span className="text-center">Stock</span>
-          <span className="text-center">Acções</span>
+          <span className="w-10" /><span>Produto</span><span>Categoria</span><span className="text-right">Preço</span><span className="text-center">Stock</span><span className="text-center">Acções</span>
         </div>
         <div className="divide-y divide-border">
           {filtered.map((p) => {
@@ -369,9 +324,7 @@ const ProductsTab = () => {
                 <Badge variant="secondary" className="hidden sm:inline-flex text-[10px] w-fit">{CATEGORY_LABELS[p.category]}</Badge>
                 <span className="hidden sm:block font-display font-bold text-sm text-right">{formatPrice(p.price)}</span>
                 <div className="hidden sm:flex justify-center">
-                  <Badge variant={p.stock < 10 ? "destructive" : "secondary"} className="text-[10px]">
-                    {p.stock}
-                  </Badge>
+                  <Badge variant={p.stock < 10 ? "destructive" : "secondary"} className="text-[10px]">{p.stock}</Badge>
                 </div>
                 <div className="flex gap-1 justify-end sm:justify-center">
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => openEdit(p)}><Pencil className="w-3.5 h-3.5" /></Button>
@@ -391,50 +344,25 @@ const SuppliersTab = () => {
   const { suppliers, products, setSuppliers } = useStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
-  const [form, setForm] = useState({
-    name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true,
-  });
+  const [form, setForm] = useState({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true });
 
-  const openNew = () => {
-    setEditSupplier(null);
-    setForm({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true });
-    setDialogOpen(true);
-  };
-
-  const openEdit = (s: Supplier) => {
-    setEditSupplier(s);
-    setForm({
-      name: s.name, description: s.description, contactEmail: s.contactEmail,
-      contactPhone: s.contactPhone, rating: String(s.rating), verified: s.verified,
-    });
-    setDialogOpen(true);
-  };
+  const openNew = () => { setEditSupplier(null); setForm({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true }); setDialogOpen(true); };
+  const openEdit = (s: Supplier) => { setEditSupplier(s); setForm({ name: s.name, description: s.description, contactEmail: s.contactEmail, contactPhone: s.contactPhone, rating: String(s.rating), verified: s.verified }); setDialogOpen(true); };
 
   const handleSave = () => {
-    if (!form.name || !form.contactEmail) {
-      toast.error("Preencha os campos obrigatórios");
-      return;
-    }
+    if (!form.name || !form.contactEmail) { toast.error("Preencha os campos obrigatórios"); return; }
     const data: Supplier = {
-      id: editSupplier?.id || `sup-${Date.now()}`,
-      name: form.name, description: form.description, contactEmail: form.contactEmail,
-      contactPhone: form.contactPhone, rating: Number(form.rating), verified: form.verified,
+      id: editSupplier?.id || `sup-${Date.now()}`, name: form.name, description: form.description,
+      contactEmail: form.contactEmail, contactPhone: form.contactPhone,
+      rating: Number(form.rating), verified: form.verified,
       createdAt: editSupplier?.createdAt || new Date().toISOString(),
     };
-    if (editSupplier) {
-      setSuppliers((prev) => prev.map((s) => (s.id === data.id ? data : s)));
-      toast.success("Fornecedor actualizado");
-    } else {
-      setSuppliers((prev) => [...prev, data]);
-      toast.success("Fornecedor adicionado");
-    }
+    if (editSupplier) { setSuppliers((prev) => prev.map((s) => (s.id === data.id ? data : s))); toast.success("Fornecedor actualizado"); }
+    else { setSuppliers((prev) => [...prev, data]); toast.success("Fornecedor adicionado"); }
     setDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    setSuppliers((prev) => prev.filter((s) => s.id !== id));
-    toast.success("Fornecedor removido");
-  };
+  const handleDelete = (id: string) => { setSuppliers((prev) => prev.filter((s) => s.id !== id)); toast.success("Fornecedor removido"); };
 
   return (
     <div className="space-y-6">
@@ -445,14 +373,10 @@ const SuppliersTab = () => {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openNew} className="bg-primary text-primary-foreground rounded-xl shadow-md shadow-primary/20">
-              <Plus className="w-4 h-4 mr-1.5" /> Novo Fornecedor
-            </Button>
+            <Button onClick={openNew} className="bg-primary text-primary-foreground rounded-xl shadow-md shadow-primary/20"><Plus className="w-4 h-4 mr-1.5" /> Novo Fornecedor</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader>
-              <DialogTitle className="font-display">{editSupplier ? "Editar Fornecedor" : "Novo Fornecedor"}</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle className="font-display">{editSupplier ? "Editar Fornecedor" : "Novo Fornecedor"}</DialogTitle></DialogHeader>
             <div className="space-y-4 mt-4">
               <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl" /></div>
               <div><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="rounded-xl" /></div>
@@ -483,9 +407,7 @@ const SuppliersTab = () => {
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary font-display font-bold text-sm">
-                      {s.name.charAt(0)}
-                    </div>
+                    <div className="w-11 h-11 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary font-display font-bold text-sm">{s.name.charAt(0)}</div>
                     <div>
                       <div className="flex items-center gap-1.5">
                         <h3 className="font-display font-bold text-sm">{s.name}</h3>
@@ -521,7 +443,6 @@ const SuppliersTab = () => {
 /* ─── Orders ─── */
 const OrdersTab = () => {
   const { orders, updateOrderStatus } = useStore();
-  const formatPrice = (p: number) => new Intl.NumberFormat("pt-MZ", { style: "currency", currency: "MZN" }).format(p);
 
   const statusActions: Record<string, { next: OrderStatus; label: string; icon: React.ReactNode; variant: "default" | "outline" | "destructive" }[]> = {
     "pending": [{ next: "cancelled", label: "Cancelar", icon: <XCircle className="w-3.5 h-3.5" />, variant: "outline" }],
@@ -561,36 +482,26 @@ const OrdersTab = () => {
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                      <ShoppingBag className="w-5 h-5" />
-                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary"><ShoppingBag className="w-5 h-5" /></div>
                     <div>
                       <p className="font-display font-bold text-sm">{o.customerName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {o.customerPhone} • {new Date(o.createdAt).toLocaleDateString("pt-MZ")}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{o.customerPhone} • {new Date(o.createdAt).toLocaleDateString("pt-MZ")}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <Badge variant={statusColor(o.status)} className="text-[10px]">
-                      {ORDER_STATUS_LABELS[o.status]}
-                    </Badge>
+                    <Badge variant={statusColor(o.status)} className="text-[10px]">{ORDER_STATUS_LABELS[o.status]}</Badge>
                     <p className="font-display font-bold mt-1">{formatPrice(o.total)}</p>
                   </div>
                 </div>
-
                 <div className="bg-muted/40 rounded-xl p-3 mb-4">
                   <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                     <span>Pagamento: {o.paymentMethod === "mpesa" ? "M-Pesa" : "Transferência Bancária"}</span>
                     {o.paymentProofUrl && (
-                      <a href={o.paymentProofUrl} target="_blank" rel="noreferrer" className="text-primary font-medium hover:underline flex items-center gap-1">
-                        <Eye className="w-3 h-3" /> Ver comprovativo
-                      </a>
+                      <a href={o.paymentProofUrl} target="_blank" rel="noreferrer" className="text-primary font-medium hover:underline flex items-center gap-1"><Eye className="w-3 h-3" /> Ver comprovativo</a>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">Endereço: {o.customerAddress}</p>
                 </div>
-
                 <div className="space-y-1.5 mb-4">
                   {o.items.map((item) => (
                     <div key={item.product.id} className="flex justify-between text-sm">
@@ -599,22 +510,11 @@ const OrdersTab = () => {
                     </div>
                   ))}
                 </div>
-
                 {statusActions[o.status] && (
                   <div className="flex gap-2 pt-3 border-t border-border">
                     {statusActions[o.status].map((action) => (
-                      <Button
-                        key={action.next}
-                        variant={action.variant}
-                        size="sm"
-                        className="rounded-xl"
-                        onClick={() => {
-                          updateOrderStatus(o.id, action.next);
-                          toast.success(`Estado alterado para: ${ORDER_STATUS_LABELS[action.next]}`);
-                        }}
-                      >
-                        {action.icon}
-                        <span className="ml-1.5">{action.label}</span>
+                      <Button key={action.next} variant={action.variant} size="sm" className="rounded-xl" onClick={() => { updateOrderStatus(o.id, action.next); toast.success(`Estado alterado para: ${ORDER_STATUS_LABELS[action.next]}`); }}>
+                        {action.icon}<span className="ml-1.5">{action.label}</span>
                       </Button>
                     ))}
                   </div>
@@ -624,6 +524,311 @@ const OrdersTab = () => {
           ))}
         </div>
       )}
+    </div>
+  );
+};
+
+/* ─── Ads / Publicidade ─── */
+const AdsTab = () => {
+  const { adCampaigns, setAdCampaigns } = useStore();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editAd, setEditAd] = useState<AdCampaign | null>(null);
+  const [filterSpace, setFilterSpace] = useState<AdSpace | "all">("all");
+  const [form, setForm] = useState({
+    partner: "", title: "", description: "", cta: "", url: "", image: "",
+    space: "" as AdSpace | "", status: "active" as AdStatus,
+    startDate: "", endDate: "", expectedRevenue: "", realizedRevenue: "",
+  });
+
+  const filtered = adCampaigns.filter((a) => filterSpace === "all" || a.space === filterSpace);
+
+  // Group by space for overview
+  const spaceStats = (Object.keys(AD_SPACE_LABELS) as AdSpace[]).map((space) => {
+    const ads = adCampaigns.filter((a) => a.space === space);
+    const activeAds = ads.filter((a) => a.status === "active").length;
+    const totalExpected = ads.reduce((s, a) => s + a.expectedRevenue, 0);
+    const totalRealized = ads.reduce((s, a) => s + a.realizedRevenue, 0);
+    return { space, label: AD_SPACE_LABELS[space], count: ads.length, activeAds, totalExpected, totalRealized };
+  });
+
+  const totalExpected = adCampaigns.reduce((s, a) => s + a.expectedRevenue, 0);
+  const totalRealized = adCampaigns.reduce((s, a) => s + a.realizedRevenue, 0);
+  const totalImpressions = adCampaigns.reduce((s, a) => s + a.impressions, 0);
+  const totalClicks = adCampaigns.reduce((s, a) => s + a.clicks, 0);
+
+  const openNew = () => {
+    setEditAd(null);
+    setForm({ partner: "", title: "", description: "", cta: "", url: "", image: "", space: "", status: "active", startDate: "", endDate: "", expectedRevenue: "", realizedRevenue: "" });
+    setDialogOpen(true);
+  };
+
+  const openEdit = (ad: AdCampaign) => {
+    setEditAd(ad);
+    setForm({
+      partner: ad.partner, title: ad.title, description: ad.description, cta: ad.cta, url: ad.url, image: ad.image,
+      space: ad.space, status: ad.status, startDate: ad.startDate, endDate: ad.endDate,
+      expectedRevenue: String(ad.expectedRevenue), realizedRevenue: String(ad.realizedRevenue),
+    });
+    setDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!form.partner || !form.title || !form.space) { toast.error("Preencha os campos obrigatórios"); return; }
+    const data: AdCampaign = {
+      id: editAd?.id || `ad-${Date.now()}`,
+      partner: form.partner, title: form.title, description: form.description,
+      cta: form.cta || "Ver Mais", url: form.url || "#",
+      image: form.image || "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&h=200&fit=crop",
+      space: form.space as AdSpace, status: form.status,
+      startDate: form.startDate || new Date().toISOString().split("T")[0],
+      endDate: form.endDate || "",
+      expectedRevenue: Number(form.expectedRevenue) || 0,
+      realizedRevenue: Number(form.realizedRevenue) || 0,
+      impressions: editAd?.impressions || 0,
+      clicks: editAd?.clicks || 0,
+      createdAt: editAd?.createdAt || new Date().toISOString(),
+    };
+    if (editAd) {
+      setAdCampaigns((prev) => prev.map((a) => (a.id === data.id ? data : a)));
+      toast.success("Campanha actualizada");
+    } else {
+      setAdCampaigns((prev) => [...prev, data]);
+      toast.success("Campanha criada");
+    }
+    setDialogOpen(false);
+  };
+
+  const handleDelete = (id: string) => { setAdCampaigns((prev) => prev.filter((a) => a.id !== id)); toast.success("Campanha removida"); };
+
+  const toggleStatus = (ad: AdCampaign) => {
+    const newStatus: AdStatus = ad.status === "active" ? "paused" : "active";
+    setAdCampaigns((prev) => prev.map((a) => (a.id === ad.id ? { ...a, status: newStatus } : a)));
+    toast.success(`Campanha ${newStatus === "active" ? "activada" : "pausada"}`);
+  };
+
+  const statusBadgeVariant = (status: AdStatus): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status) {
+      case "active": return "default";
+      case "paused": return "secondary";
+      case "ended": return "destructive";
+      default: return "outline";
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-display font-bold">Gestão de Publicidade</h1>
+          <p className="text-sm text-muted-foreground">Gerir espaços publicitários, campanhas e receitas de parceiros</p>
+        </div>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={openNew} className="bg-primary text-primary-foreground rounded-xl shadow-md shadow-primary/20">
+              <Plus className="w-4 h-4 mr-1.5" /> Nova Campanha
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle className="font-display">{editAd ? "Editar Campanha" : "Nova Campanha"}</DialogTitle></DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div><Label>Parceiro *</Label><Input value={form.partner} onChange={(e) => setForm({ ...form, partner: e.target.value })} placeholder="Nome do parceiro" className="rounded-xl" /></div>
+              <div><Label>Título *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="rounded-xl" /></div>
+              <div><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="rounded-xl" /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label>CTA (Botão)</Label><Input value={form.cta} onChange={(e) => setForm({ ...form, cta: e.target.value })} placeholder="Ver Ofertas" className="rounded-xl" /></div>
+                <div><Label>URL Destino</Label><Input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} placeholder="https://..." className="rounded-xl" /></div>
+              </div>
+              <div><Label>URL da Imagem</Label><Input value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} className="rounded-xl" /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Espaço *</Label>
+                  <Select value={form.space} onValueChange={(v) => setForm({ ...form, space: v as AdSpace })}>
+                    <SelectTrigger className="rounded-xl"><SelectValue placeholder="Seleccionar espaço" /></SelectTrigger>
+                    <SelectContent>{(Object.entries(AD_SPACE_LABELS) as [AdSpace, string][]).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}</SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Estado</Label>
+                  <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as AdStatus })}>
+                    <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent>{(Object.entries(AD_STATUS_LABELS) as [AdStatus, string][]).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}</SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label>Data Início</Label><Input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} className="rounded-xl" /></div>
+                <div><Label>Data Fim</Label><Input type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} className="rounded-xl" /></div>
+              </div>
+              <Separator />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Receitas (MZN)</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label>Receita Prevista</Label><Input type="number" value={form.expectedRevenue} onChange={(e) => setForm({ ...form, expectedRevenue: e.target.value })} className="rounded-xl" /></div>
+                <div><Label>Receita Realizada</Label><Input type="number" value={form.realizedRevenue} onChange={(e) => setForm({ ...form, realizedRevenue: e.target.value })} className="rounded-xl" /></div>
+              </div>
+              <Button onClick={handleSave} className="w-full bg-primary text-primary-foreground rounded-xl">Guardar</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Revenue Overview Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-5">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-3"><DollarSign className="w-5 h-5" /></div>
+            <p className="text-2xl font-display font-bold">{formatPrice(totalExpected)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Receita Prevista</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent mb-3"><TrendingUp className="w-5 h-5" /></div>
+            <p className="text-2xl font-display font-bold">{formatPrice(totalRealized)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Receita Realizada</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary mb-3"><Eye className="w-5 h-5" /></div>
+            <p className="text-2xl font-display font-bold">{totalImpressions.toLocaleString("pt-MZ")}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Impressões Totais</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-3"><MousePointerClick className="w-5 h-5" /></div>
+            <p className="text-2xl font-display font-bold">{totalClicks.toLocaleString("pt-MZ")}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Cliques Totais</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Space Overview */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2"><Monitor className="w-5 h-5 text-primary" /> Receitas por Espaço</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {spaceStats.map((ss) => {
+              const pct = ss.totalExpected > 0 ? Math.round((ss.totalRealized / ss.totalExpected) * 100) : 0;
+              return (
+                <div
+                  key={ss.space}
+                  onClick={() => setFilterSpace(filterSpace === ss.space ? "all" : ss.space)}
+                  className={`p-4 rounded-xl border cursor-pointer transition-all hover:shadow-sm ${
+                    filterSpace === ss.space ? "border-primary bg-primary/5 shadow-sm" : "border-border bg-muted/30"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-display font-semibold">{ss.label}</span>
+                    <Badge variant="secondary" className="text-[10px]">{ss.activeAds} activo{ss.activeAds !== 1 ? "s" : ""}</Badge>
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Realizado / Previsto</p>
+                      <p className="text-sm font-bold">{formatPrice(ss.totalRealized)} <span className="text-muted-foreground font-normal">/ {formatPrice(ss.totalExpected)}</span></p>
+                    </div>
+                    <span className={`text-lg font-display font-bold ${pct >= 70 ? "text-primary" : pct >= 40 ? "text-accent" : "text-destructive"}`}>{pct}%</span>
+                  </div>
+                  {/* Progress bar */}
+                  <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${pct >= 70 ? "bg-primary" : pct >= 40 ? "bg-accent" : "bg-destructive"}`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Filter label */}
+      {filterSpace !== "all" && (
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs">Filtro: {AD_SPACE_LABELS[filterSpace]}</Badge>
+          <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={() => setFilterSpace("all")}>Limpar filtro</Button>
+        </div>
+      )}
+
+      {/* Campaign List */}
+      <Card className="overflow-hidden">
+        <div className="hidden sm:grid grid-cols-[1fr_140px_100px_100px_100px_80px] gap-4 items-center px-5 py-3 bg-muted/50 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <span>Campanha</span><span>Espaço</span><span>Estado</span><span className="text-right">Prevista</span><span className="text-right">Realizada</span><span className="text-center">Acções</span>
+        </div>
+        <div className="divide-y divide-border">
+          {filtered.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Megaphone className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">Nenhuma campanha {filterSpace !== "all" ? "neste espaço" : "registada"}</p>
+            </div>
+          ) : (
+            filtered.map((ad) => (
+              <div key={ad.id} className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_140px_100px_100px_100px_80px] gap-4 items-center px-5 py-4 hover:bg-muted/30 transition-colors">
+                <div className="flex items-center gap-3 min-w-0">
+                  <img src={ad.image} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="font-display font-semibold text-sm truncate">{ad.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">{ad.partner} • {ad.startDate} → {ad.endDate || "∞"}</p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="hidden sm:inline-flex text-[10px] w-fit">{AD_SPACE_LABELS[ad.space]}</Badge>
+                <Badge variant={statusBadgeVariant(ad.status)} className="hidden sm:inline-flex text-[10px] w-fit">{AD_STATUS_LABELS[ad.status]}</Badge>
+                <span className="hidden sm:block text-sm text-right">{formatPrice(ad.expectedRevenue)}</span>
+                <span className="hidden sm:block text-sm font-bold text-right">{formatPrice(ad.realizedRevenue)}</span>
+                <div className="flex gap-0.5 justify-end sm:justify-center">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => toggleStatus(ad)} title={ad.status === "active" ? "Pausar" : "Activar"}>
+                    {ad.status === "active" ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => openEdit(ad)}><Pencil className="w-3.5 h-3.5" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => handleDelete(ad.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </Card>
+
+      {/* Partner Summary */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2"><Users className="w-5 h-5 text-primary" /> Resumo por Parceiro</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {(() => {
+            const partnerMap = new Map<string, { spaces: Set<string>; campaigns: number; expected: number; realized: number }>();
+            adCampaigns.forEach((a) => {
+              const p = partnerMap.get(a.partner) || { spaces: new Set(), campaigns: 0, expected: 0, realized: 0 };
+              p.spaces.add(a.space);
+              p.campaigns++;
+              p.expected += a.expectedRevenue;
+              p.realized += a.realizedRevenue;
+              partnerMap.set(a.partner, p);
+            });
+            return (
+              <div className="space-y-3">
+                {Array.from(partnerMap.entries()).map(([name, data]) => (
+                  <div key={name} className="flex items-center justify-between p-4 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-display font-bold text-sm">{name.charAt(0)}</div>
+                      <div>
+                        <p className="font-display font-semibold text-sm">{name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {data.campaigns} campanha{data.campaigns > 1 ? "s" : ""} • {data.spaces.size} espaço{data.spaces.size > 1 ? "s" : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-display font-bold text-sm">{formatPrice(data.realized)}</p>
+                      <p className="text-xs text-muted-foreground">de {formatPrice(data.expected)} previsto</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </CardContent>
+      </Card>
     </div>
   );
 };
