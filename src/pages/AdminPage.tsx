@@ -16,11 +16,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/contexts/StoreContext";
-import { CATEGORY_LABELS, ORDER_STATUS_LABELS, AD_SPACE_LABELS, AD_STATUS_LABELS } from "@/types/store";
+import { CATEGORY_LABELS, ORDER_STATUS_LABELS, AD_SPACE_LABELS, AD_STATUS_LABELS, DELIVERY_ZONE_LABELS } from "@/types/store";
 import type { Product, Supplier, Category, Order, OrderStatus, AdCampaign, AdSpace, AdStatus } from "@/types/store";
 import { toast } from "sonner";
+import { generatePartnerRevenueReport, generateAdRevenueReport, openReport } from "@/utils/reports";
 
-type Tab = "dashboard" | "products" | "suppliers" | "orders" | "ads";
+type Tab = "dashboard" | "products" | "suppliers" | "orders" | "ads" | "reports";
 
 const AdminPage = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
