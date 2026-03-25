@@ -97,6 +97,7 @@ const AdminPage = () => {
           {tab === "suppliers" && <SuppliersTab />}
           {tab === "orders" && <OrdersTab />}
           {tab === "ads" && <AdsTab />}
+          {tab === "reports" && <ReportsTab />}
         </div>
       </main>
     </div>
