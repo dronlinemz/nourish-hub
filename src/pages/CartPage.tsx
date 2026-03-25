@@ -1,14 +1,18 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Trash2, Minus, Plus, ArrowLeft, ShoppingBag, Shield, Truck, CreditCard } from "lucide-react";
+import { Trash2, Minus, Plus, ArrowLeft, ShoppingBag, Shield, Truck, CreditCard, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
 import { useCart } from "@/contexts/CartContext";
 import PartnerBanner from "@/components/PartnerBanner";
+import { IVA_RATE, DELIVERY_FEES, DELIVERY_ZONE_LABELS } from "@/types/store";
+import type { DeliveryZone } from "@/types/store";
 
 const CartPage = () => {
   const { items, removeItem, updateQuantity, total } = useCart();
+  const [deliveryZone, setDeliveryZone] = useState<DeliveryZone>("maputo");
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("pt-MZ", { style: "currency", currency: "MZN" }).format(price);
@@ -117,20 +121,47 @@ const CartPage = () => {
           <div className="space-y-4">
             <Card className="p-6 rounded-xl border-border">
               <h3 className="font-display font-bold text-lg mb-5">Resumo da Encomenda</h3>
+
+              {/* Delivery zone selector */}
+              <div className="mb-5">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5" /> Zona de Entrega
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {(Object.entries(DELIVERY_ZONE_LABELS) as [DeliveryZone, string][]).map(([zone, label]) => (
+                    <button
+                      key={zone}
+                      onClick={() => setDeliveryZone(zone)}
+                      className={`p-2.5 rounded-lg border text-xs font-medium transition-colors ${
+                        deliveryZone === zone
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border text-muted-foreground hover:border-muted-foreground/40"
+                      }`}
+                    >
+                      {label} — {formatPrice(DELIVERY_FEES[zone])}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="space-y-3 mb-5">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal ({itemCount} itens)</span>
                   <span className="font-medium">{formatPrice(total)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Envio</span>
-                  <span className="text-primary font-medium text-xs bg-primary/10 px-2 py-0.5 rounded-full">A calcular</span>
+                  <span className="text-muted-foreground">IVA (16%)</span>
+                  <span className="font-medium">{formatPrice(total * IVA_RATE)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Entrega ({DELIVERY_ZONE_LABELS[deliveryZone]})</span>
+                  <span className="font-medium">{formatPrice(DELIVERY_FEES[deliveryZone])}</span>
                 </div>
               </div>
               <div className="border-t border-border pt-4 mb-5">
                 <div className="flex justify-between font-display font-bold text-lg">
                   <span>Total</span>
-                  <span className="text-primary">{formatPrice(total)}</span>
+                  <span className="text-primary">{formatPrice(total + total * IVA_RATE + DELIVERY_FEES[deliveryZone])}</span>
                 </div>
               </div>
               <Link to="/checkout">
@@ -144,7 +175,7 @@ const CartPage = () => {
             <div className="space-y-2.5">
               {[
                 { icon: <Shield className="w-4 h-4 text-primary" />, text: "Compra 100% segura" },
-                { icon: <Truck className="w-4 h-4 text-primary" />, text: "Entrega em todo Moçambique" },
+                { icon: <Truck className="w-4 h-4 text-primary" />, text: "Entrega em Maputo e Matola" },
                 { icon: <CreditCard className="w-4 h-4 text-primary" />, text: "M-Pesa & Transferência" },
               ].map((item) => (
                 <div key={item.text} className="flex items-center gap-2.5 text-xs text-muted-foreground">

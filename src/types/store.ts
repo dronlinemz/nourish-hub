@@ -52,16 +52,35 @@ export interface CartItem {
 
 export type PaymentMethod = "mpesa" | "bank-transfer";
 
+export type DeliveryZone = "maputo" | "matola";
+
+export const DELIVERY_FEES: Record<DeliveryZone, number> = {
+  maputo: 150,
+  matola: 250,
+};
+
+export const DELIVERY_ZONE_LABELS: Record<DeliveryZone, string> = {
+  maputo: "Maputo",
+  matola: "Matola",
+};
+
+export const IVA_RATE = 0.16;
+
 export type OrderStatus = "pending" | "payment-submitted" | "payment-verified" | "shipped" | "delivered" | "cancelled";
 
 export interface Order {
   id: string;
   items: CartItem[];
+  subtotal: number;
+  iva: number;
+  deliveryFee: number;
+  deliveryZone: DeliveryZone;
   total: number;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
   customerAddress: string;
+  customerNuit?: string;
   paymentMethod: PaymentMethod;
   paymentProofUrl?: string;
   status: OrderStatus;

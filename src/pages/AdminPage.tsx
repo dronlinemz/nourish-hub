@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, Users, ShoppingBag, ArrowLeft, Plus, Pencil, Trash2,
   BadgeCheck, CheckCircle, XCircle, Truck, Star, TrendingUp, AlertCircle,
   BarChart3, DollarSign, Eye, Search, Megaphone, Play, Pause, Calendar,
-  MousePointerClick, Monitor
+  MousePointerClick, Monitor, FileText, Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,11 +16,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/contexts/StoreContext";
-import { CATEGORY_LABELS, ORDER_STATUS_LABELS, AD_SPACE_LABELS, AD_STATUS_LABELS } from "@/types/store";
+import { CATEGORY_LABELS, ORDER_STATUS_LABELS, AD_SPACE_LABELS, AD_STATUS_LABELS, DELIVERY_ZONE_LABELS } from "@/types/store";
 import type { Product, Supplier, Category, Order, OrderStatus, AdCampaign, AdSpace, AdStatus } from "@/types/store";
 import { toast } from "sonner";
+import { generatePartnerRevenueReport, generateAdRevenueReport, openReport } from "@/utils/reports";
 
-type Tab = "dashboard" | "products" | "suppliers" | "orders" | "ads";
+type Tab = "dashboard" | "products" | "suppliers" | "orders" | "ads" | "reports";
 
 const AdminPage = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -31,12 +32,13 @@ const AdminPage = () => {
     { id: "suppliers", label: "Fornecedores", icon: <Users className="w-4 h-4" /> },
     { id: "orders", label: "Encomendas", icon: <ShoppingBag className="w-4 h-4" /> },
     { id: "ads", label: "Publicidade", icon: <Megaphone className="w-4 h-4" /> },
+    { id: "reports", label: "Relatórios", icon: <FileText className="w-4 h-4" /> },
   ];
 
   return (
     <div className="min-h-screen flex bg-background">
       {/* Sidebar */}
-      <aside className="w-64 bg-sidebar text-sidebar-foreground flex-shrink-0 hidden md:flex flex-col border-r border-sidebar-border">
+      <aside className="w-64 bg-sidebar text-sidebar-foreground flex-shrink-0 hidden md:flex flex-col border-r border-sidebar-border sticky top-0 h-screen">
         <div className="p-5 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/70 flex items-center justify-center shadow-lg shadow-sidebar-primary/20">
@@ -96,6 +98,7 @@ const AdminPage = () => {
           {tab === "suppliers" && <SuppliersTab />}
           {tab === "orders" && <OrdersTab />}
           {tab === "ads" && <AdsTab />}
+          {tab === "reports" && <ReportsTab />}
         </div>
       </main>
     </div>
@@ -827,6 +830,138 @@ const AdsTab = () => {
               </div>
             );
           })()}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+/* ─── Reports ─── */
+const ReportsTab = () => {
+  const { orders, suppliers, adCampaigns } = useStore();
+  const validOrders = orders.filter((o) => o.status !== "cancelled");
+  const totalProductRevenue = validOrders.reduce((s, o) => s + o.subtotal, 0);
+  const totalIva = validOrders.reduce((s, o) => s + o.iva, 0);
+  const totalDelivery = validOrders.reduce((s, o) => s + o.deliveryFee, 0);
+  const totalAdRevenue = adCampaigns.reduce((s, a) => s + a.realizedRevenue, 0);
+
+  const handlePartnerReport = (detailed: boolean) => {
+    if (orders.length === 0) { toast.error("Sem encomendas para gerar relatório"); return; }
+    const html = generatePartnerRevenueReport(orders, suppliers, detailed);
+    openReport(html);
+    toast.success(`Relatório ${detailed ? "detalhado" : "simplificado"} gerado`);
+  };
+
+  const handleAdReport = () => {
+    if (adCampaigns.length === 0) { toast.error("Sem campanhas para gerar relatório"); return; }
+    const html = generateAdRevenueReport(adCampaigns);
+    openReport(html);
+    toast.success("Relatório de publicidade gerado");
+  };
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl md:text-3xl font-display font-bold">Relatórios</h1>
+        <p className="text-sm text-muted-foreground">Gerar relatórios de receitas para partilhar com parceiros</p>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card><CardContent className="p-5">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-3"><DollarSign className="w-5 h-5" /></div>
+          <p className="text-2xl font-display font-bold">{formatPrice(totalProductRevenue)}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Receita Produtos</p>
+        </CardContent></Card>
+        <Card><CardContent className="p-5">
+          <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent mb-3"><Megaphone className="w-5 h-5" /></div>
+          <p className="text-2xl font-display font-bold">{formatPrice(totalAdRevenue)}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Receita Publicidade</p>
+        </CardContent></Card>
+        <Card><CardContent className="p-5">
+          <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary mb-3"><BarChart3 className="w-5 h-5" /></div>
+          <p className="text-2xl font-display font-bold">{formatPrice(totalIva)}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">IVA Cobrado</p>
+        </CardContent></Card>
+        <Card><CardContent className="p-5">
+          <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground mb-3"><Truck className="w-5 h-5" /></div>
+          <p className="text-2xl font-display font-bold">{formatPrice(totalDelivery)}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Receita Entregas</p>
+        </CardContent></Card>
+      </div>
+
+      {/* Report Actions */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2"><FileText className="w-5 h-5 text-primary" /> Relatório de Receitas (Parceiros)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Gera relatório de receitas por fornecedor/parceiro. <strong>Não inclui taxas de transporte.</strong>
+            </p>
+            <div className="flex gap-3">
+              <Button onClick={() => handlePartnerReport(false)} variant="outline" className="rounded-xl flex-1">
+                <Download className="w-4 h-4 mr-1.5" /> Simplificado
+              </Button>
+              <Button onClick={() => handlePartnerReport(true)} className="bg-primary text-primary-foreground rounded-xl flex-1">
+                <Download className="w-4 h-4 mr-1.5" /> Detalhado
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2"><Megaphone className="w-5 h-5 text-accent" /> Relatório de Publicidade</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Relatório completo de campanhas publicitárias com receitas previstas, realizadas, impressões e cliques por parceiro e espaço.
+            </p>
+            <Button onClick={handleAdReport} className="bg-primary text-primary-foreground rounded-xl w-full">
+              <Download className="w-4 h-4 mr-1.5" /> Gerar Relatório
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent orders quick view */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Últimas Encomendas (Resumo Fiscal)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {orders.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">Sem encomendas registadas</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b">
+                    <th className="py-2 px-3 text-left">ID</th>
+                    <th className="py-2 px-3 text-left">Cliente</th>
+                    <th className="py-2 px-3 text-right">Subtotal</th>
+                    <th className="py-2 px-3 text-right">IVA</th>
+                    <th className="py-2 px-3 text-right">Entrega</th>
+                    <th className="py-2 px-3 text-right">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.slice(0, 10).map((o) => (
+                    <tr key={o.id} className="border-b border-border/50 hover:bg-muted/30">
+                      <td className="py-2 px-3 font-mono text-xs">{o.id}</td>
+                      <td className="py-2 px-3">{o.customerName}</td>
+                      <td className="py-2 px-3 text-right">{formatPrice(o.subtotal)}</td>
+                      <td className="py-2 px-3 text-right">{formatPrice(o.iva)}</td>
+                      <td className="py-2 px-3 text-right">{formatPrice(o.deliveryFee)}</td>
+                      <td className="py-2 px-3 text-right font-bold">{formatPrice(o.total)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
