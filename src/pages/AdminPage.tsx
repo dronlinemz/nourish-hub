@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, Users, ShoppingBag, ArrowLeft, Plus, Pencil, Trash2,
   BadgeCheck, CheckCircle, XCircle, Truck, Star, TrendingUp, AlertCircle,
   BarChart3, DollarSign, Eye, Search, Megaphone, Play, Pause, Calendar,
-  MousePointerClick, Monitor
+  MousePointerClick, Monitor, FileText, Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
