@@ -32,7 +32,7 @@ const AdminPage = () => {
     { id: "suppliers", label: "Fornecedores", icon: <Users className="w-4 h-4" /> },
     { id: "orders", label: "Encomendas", icon: <ShoppingBag className="w-4 h-4" /> },
     { id: "ads", label: "Publicidade", icon: <Megaphone className="w-4 h-4" /> },
-  ];
+    { id: "reports", label: "Relatórios", icon: <FileText className="w-4 h-4" /> },
 
   return (
     <div className="min-h-screen flex bg-background">
