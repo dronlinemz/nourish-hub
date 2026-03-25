@@ -1,14 +1,18 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Trash2, Minus, Plus, ArrowLeft, ShoppingBag, Shield, Truck, CreditCard } from "lucide-react";
+import { Trash2, Minus, Plus, ArrowLeft, ShoppingBag, Shield, Truck, CreditCard, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
 import { useCart } from "@/contexts/CartContext";
 import PartnerBanner from "@/components/PartnerBanner";
+import { IVA_RATE, DELIVERY_FEES, DELIVERY_ZONE_LABELS } from "@/types/store";
+import type { DeliveryZone } from "@/types/store";
 
 const CartPage = () => {
   const { items, removeItem, updateQuantity, total } = useCart();
+  const [deliveryZone, setDeliveryZone] = useState<DeliveryZone>("maputo");
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("pt-MZ", { style: "currency", currency: "MZN" }).format(price);
