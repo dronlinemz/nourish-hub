@@ -1,41 +1,37 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, CreditCard, Smartphone, Building2, Upload, CheckCircle, Download, MapPin } from "lucide-react";
+import { ArrowLeft, CreditCard, Smartphone, Building2, Upload, CheckCircle, Download, MapPin, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
 import { useCart } from "@/contexts/CartContext";
 import { useStore } from "@/contexts/StoreContext";
-import { IVA_RATE, DELIVERY_FEES, DELIVERY_ZONE_LABELS } from "@/types/store";
+import { IVA_RATE, DELIVERY_ZONE_LABELS } from "@/types/store";
 import type { PaymentMethod, DeliveryZone, Order } from "@/types/store";
 import { toast } from "sonner";
 import { downloadInvoice } from "@/utils/invoice";
 
 const CheckoutPage = () => {
-  const { items, total: subtotalRaw, clearCart } = useCart();
-  const { addOrder } = useStore();
+  const { items, total: subtotalRaw, clearCart, deliveryZone, setDeliveryZone } = useCart();
+  const { addOrder, deliveryFees } = useStore();
   const navigate = useNavigate();
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("mpesa");
-  const [deliveryZone, setDeliveryZone] = useState<DeliveryZone>("maputo");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
-  const [form, setForm] = useState({
-    name: "", email: "", phone: "", address: "", nuit: "",
-  });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", address: "", nuit: "" });
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("pt-MZ", { style: "currency", currency: "MZN" }).format(price);
 
   const subtotal = subtotalRaw;
   const iva = subtotal * IVA_RATE;
-  const deliveryFee = DELIVERY_FEES[deliveryZone];
+  const deliveryFee = deliveryFees[deliveryZone];
   const grandTotal = subtotal + iva + deliveryFee;
 
   if (items.length === 0 && !submitted) {
@@ -44,6 +40,7 @@ const CheckoutPage = () => {
   }
 
   if (submitted && lastOrder) {
+    const canDownloadInvoice = lastOrder.paymentMethod === "bank-transfer" || lastOrder.status !== "pending";
     return (
       <div className="min-h-screen flex flex-col">
         <StoreHeader />
@@ -53,13 +50,19 @@ const CheckoutPage = () => {
             <h2 className="text-2xl font-display font-bold mb-2">Encomenda Submetida!</h2>
             <p className="text-muted-foreground mb-6">
               {paymentMethod === "mpesa"
-                ? "Receberá uma notificação M-Pesa no seu telemóvel para confirmar o pagamento."
+                ? "Receberá uma notificação M-Pesa no seu telemóvel para confirmar o pagamento. A factura estará disponível após a confirmação do pagamento."
                 : "O seu comprovativo foi enviado. A equipa irá verificar e confirmar em breve."}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button onClick={() => downloadInvoice(lastOrder)} variant="outline" className="rounded-xl">
-                <Download className="w-4 h-4 mr-2" /> Descarregar Factura
-              </Button>
+              {canDownloadInvoice ? (
+                <Button onClick={() => downloadInvoice(lastOrder)} variant="outline" className="rounded-xl">
+                  <Download className="w-4 h-4 mr-2" /> Descarregar Factura
+                </Button>
+              ) : (
+                <Button variant="outline" className="rounded-xl" disabled>
+                  <Clock className="w-4 h-4 mr-2" /> Factura disponível após pagamento
+                </Button>
+              )}
               <Link to="/"><Button className="bg-primary text-primary-foreground rounded-xl">Voltar à Loja</Button></Link>
             </div>
           </div>
@@ -122,48 +125,25 @@ const CheckoutPage = () => {
               <Card className="p-6 rounded-xl">
                 <h2 className="font-display font-bold mb-4">Informações do Cliente</h2>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="name">Nome Completo *</Label>
-                    <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="rounded-xl" />
-                  </div>
-                  <div>
-                    <Label htmlFor="phone">Telefone *</Label>
-                    <Input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+258 84..." required className="rounded-xl" />
-                  </div>
-                  <div>
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="rounded-xl" />
-                  </div>
-                  <div>
-                    <Label htmlFor="nuit">NUIT (opcional)</Label>
-                    <Input id="nuit" value={form.nuit} onChange={(e) => setForm({ ...form, nuit: e.target.value })} placeholder="Nº de contribuinte" className="rounded-xl" />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <Label htmlFor="address">Endereço de Entrega *</Label>
-                    <Textarea id="address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required className="rounded-xl" />
-                  </div>
+                  <div><Label htmlFor="name">Nome Completo *</Label><Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="rounded-xl" /></div>
+                  <div><Label htmlFor="phone">Telefone *</Label><Input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+258 84..." required className="rounded-xl" /></div>
+                  <div><Label htmlFor="email">Email</Label><Input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="rounded-xl" /></div>
+                  <div><Label htmlFor="nuit">NUIT (opcional)</Label><Input id="nuit" value={form.nuit} onChange={(e) => setForm({ ...form, nuit: e.target.value })} placeholder="Nº de contribuinte" className="rounded-xl" /></div>
+                  <div className="sm:col-span-2"><Label htmlFor="address">Endereço de Entrega *</Label><Textarea id="address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required className="rounded-xl" /></div>
                 </div>
               </Card>
 
-              {/* Delivery Zone */}
+              {/* Delivery Zone - persisted from cart */}
               <Card className="p-6 rounded-xl">
                 <h2 className="font-display font-bold mb-4 flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-primary" /> Zona de Entrega
                 </h2>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {(Object.entries(DELIVERY_ZONE_LABELS) as [DeliveryZone, string][]).map(([zone, label]) => (
-                    <button
-                      key={zone}
-                      type="button"
-                      onClick={() => setDeliveryZone(zone)}
-                      className={`p-4 rounded-xl border-2 text-left transition-colors ${
-                        deliveryZone === zone
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-muted-foreground/30"
-                      }`}
-                    >
+                    <button key={zone} type="button" onClick={() => setDeliveryZone(zone)}
+                      className={`p-4 rounded-xl border-2 text-left transition-colors ${deliveryZone === zone ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
                       <p className="font-display font-semibold text-sm">{label}</p>
-                      <p className="text-xs text-muted-foreground">Taxa de entrega: {formatPrice(DELIVERY_FEES[zone])}</p>
+                      <p className="text-xs text-muted-foreground">Taxa de entrega: {formatPrice(deliveryFees[zone])}</p>
                     </button>
                   ))}
                 </div>
@@ -192,7 +172,7 @@ const CheckoutPage = () => {
                     <p className="text-sm font-medium mb-1">Instruções M-Pesa</p>
                     <p className="text-sm text-muted-foreground">
                       Após submeter a encomenda, receberá uma notificação no número indicado para confirmar o pagamento de{" "}
-                      <strong className="text-foreground">{formatPrice(grandTotal)}</strong>.
+                      <strong className="text-foreground">{formatPrice(grandTotal)}</strong>. A factura será disponibilizada após a confirmação.
                     </p>
                   </div>
                 )}
@@ -215,10 +195,7 @@ const CheckoutPage = () => {
                           {proofFile ? (
                             <p className="text-sm font-medium text-primary">{proofFile.name}</p>
                           ) : (
-                            <>
-                              <p className="text-sm font-medium">Clique para anexar</p>
-                              <p className="text-xs text-muted-foreground">PDF ou imagem do comprovativo</p>
-                            </>
+                            <><p className="text-sm font-medium">Clique para anexar</p><p className="text-xs text-muted-foreground">PDF ou imagem do comprovativo</p></>
                           )}
                         </label>
                       </div>
@@ -234,39 +211,24 @@ const CheckoutPage = () => {
               <div className="space-y-3 mb-4">
                 {items.map((item) => (
                   <div key={item.product.id} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground truncate max-w-[60%]">
-                      {item.quantity}x {item.product.name}
-                    </span>
+                    <span className="text-muted-foreground truncate max-w-[60%]">{item.quantity}x {item.product.name}</span>
                     <span>{formatPrice(item.product.price * item.quantity)}</span>
                   </div>
                 ))}
               </div>
               <div className="border-t border-border pt-3 space-y-2 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span>{formatPrice(subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">IVA (16%)</span>
-                  <span>{formatPrice(iva)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Entrega ({DELIVERY_ZONE_LABELS[deliveryZone]})</span>
-                  <span>{formatPrice(deliveryFee)}</span>
-                </div>
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span>{formatPrice(subtotal)}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">IVA (16%)</span><span>{formatPrice(iva)}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Entrega ({DELIVERY_ZONE_LABELS[deliveryZone]})</span><span>{formatPrice(deliveryFee)}</span></div>
               </div>
               <div className="border-t border-border pt-3 mb-4">
-                <div className="flex justify-between font-display font-bold text-lg">
-                  <span>Total</span>
-                  <span className="text-primary">{formatPrice(grandTotal)}</span>
-                </div>
+                <div className="flex justify-between font-display font-bold text-lg"><span>Total</span><span className="text-primary">{formatPrice(grandTotal)}</span></div>
               </div>
               <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl">
-                <CreditCard className="w-4 h-4 mr-2" />
-                Confirmar Encomenda
+                <CreditCard className="w-4 h-4 mr-2" /> Confirmar Encomenda
               </Button>
               <p className="text-[10px] text-muted-foreground text-center mt-3">
-                Ao confirmar, será gerada uma factura electrónica
+                {paymentMethod === "mpesa" ? "A factura será gerada após confirmação do pagamento M-Pesa" : "Ao confirmar, será gerada uma factura electrónica"}
               </p>
             </Card>
           </div>
