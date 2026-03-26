@@ -1,3 +1,11 @@
+export interface PremiumSubscription {
+  active: boolean;
+  startDate: string;
+  endDate: string;
+  adDiscount: number; // 0.15 = 15%
+  prioritySlots: number; // 2 slides
+}
+
 export interface Supplier {
   id: string;
   name: string;
@@ -7,6 +15,7 @@ export interface Supplier {
   verified: boolean;
   contactEmail: string;
   contactPhone: string;
+  premium?: PremiumSubscription;
   createdAt: string;
 }
 

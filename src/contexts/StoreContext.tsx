@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from "react";
-import type { Product, Supplier, Order, AdCampaign } from "@/types/store";
+import type { Product, Supplier, Order, AdCampaign, DeliveryZone } from "@/types/store";
 import { MOCK_SUPPLIERS, MOCK_PRODUCTS } from "@/data/mockData";
+import { DELIVERY_FEES as DEFAULT_DELIVERY_FEES } from "@/types/store";
 
 const MOCK_ADS: AdCampaign[] = [
   {
@@ -38,10 +39,12 @@ interface StoreContextType {
   suppliers: Supplier[];
   orders: Order[];
   adCampaigns: AdCampaign[];
+  deliveryFees: Record<DeliveryZone, number>;
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   setAdCampaigns: React.Dispatch<React.SetStateAction<AdCampaign[]>>;
+  setDeliveryFees: React.Dispatch<React.SetStateAction<Record<DeliveryZone, number>>>;
   getSupplier: (id: string) => Supplier | undefined;
   addOrder: (order: Order) => void;
   updateOrderStatus: (orderId: string, status: Order["status"]) => void;
@@ -54,6 +57,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [suppliers, setSuppliers] = useState<Supplier[]>(MOCK_SUPPLIERS);
   const [orders, setOrders] = useState<Order[]>([]);
   const [adCampaigns, setAdCampaigns] = useState<AdCampaign[]>(MOCK_ADS);
+  const [deliveryFees, setDeliveryFees] = useState<Record<DeliveryZone, number>>(DEFAULT_DELIVERY_FEES);
 
   const getSupplier = (id: string) => suppliers.find((s) => s.id === id);
   const addOrder = (order: Order) => setOrders((prev) => [order, ...prev]);
@@ -63,7 +67,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <StoreContext.Provider
-      value={{ products, suppliers, orders, adCampaigns, setProducts, setSuppliers, setOrders, setAdCampaigns, getSupplier, addOrder, updateOrderStatus }}
+      value={{ products, suppliers, orders, adCampaigns, deliveryFees, setProducts, setSuppliers, setOrders, setAdCampaigns, setDeliveryFees, getSupplier, addOrder, updateOrderStatus }}
     >
       {children}
     </StoreContext.Provider>

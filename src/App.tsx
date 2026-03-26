@@ -10,7 +10,7 @@ import ProductDetail from "./pages/ProductDetail.tsx";
 import CartPage from "./pages/CartPage.tsx";
 import CheckoutPage from "./pages/CheckoutPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
-import CategoriesPage from "./pages/CategoriesPage.tsx";
+import PartnersPage from "./pages/PartnersPage.tsx";
 import AboutPage from "./pages/AboutPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -30,7 +30,7 @@ const App = () => (
               <Route path="/carrinho" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/admin" element={<AdminPage />} />
-              <Route path="/categorias" element={<CategoriesPage />} />
+              <Route path="/parceiros" element={<PartnersPage />} />
               <Route path="/sobre" element={<AboutPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

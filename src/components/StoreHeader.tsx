@@ -1,13 +1,18 @@
 import { Link } from "react-router-dom";
-import { ShoppingCart, Menu, X, User, Heart } from "lucide-react";
+import { ShoppingCart, Menu, X, User } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 const StoreHeader = () => {
   const { itemCount } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const navLinks = [
+    { to: "/", label: "Loja" },
+    { to: "/parceiros", label: "Parceiros" },
+    { to: "/sobre", label: "Sobre" },
+  ];
 
   return (
     <header className="sticky top-0 z-50 glass-header">
@@ -17,26 +22,14 @@ const StoreHeader = () => {
             <span className="text-primary-foreground font-display font-extrabold text-sm">Dr</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-display font-bold text-base leading-tight text-foreground">
-              DrOnline
-            </span>
-            <span className="text-[10px] font-medium text-primary leading-tight tracking-wider uppercase">
-              Market
-            </span>
+            <span className="font-display font-bold text-base leading-tight text-foreground">DrOnline</span>
+            <span className="text-[10px] font-medium text-primary leading-tight tracking-wider uppercase">Market</span>
           </div>
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
-          {[
-            { to: "/", label: "Loja" },
-            { to: "/categorias", label: "Categorias" },
-            { to: "/sobre", label: "Sobre" },
-          ].map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted/60 transition-all duration-200"
-            >
+          {navLinks.map((link) => (
+            <Link key={link.to} to={link.to} className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted/60 transition-all duration-200">
               {link.label}
             </Link>
           ))}
@@ -45,8 +38,7 @@ const StoreHeader = () => {
         <div className="flex items-center gap-1.5">
           <Link to="/admin" className="hidden md:inline-flex">
             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground rounded-lg">
-              <User className="w-4 h-4 mr-1.5" />
-              Admin
+              <User className="w-4 h-4 mr-1.5" /> Admin
             </Button>
           </Link>
           <Link to="/carrinho" className="relative">
@@ -68,18 +60,9 @@ const StoreHeader = () => {
       {menuOpen && (
         <div className="md:hidden border-t border-border/50 bg-card/95 backdrop-blur-xl animate-fade-in">
           <nav className="container py-3 flex flex-col gap-0.5">
-            {[
-              { to: "/", label: "Loja" },
-              { to: "/categorias", label: "Categorias" },
-              { to: "/sobre", label: "Sobre" },
-              { to: "/admin", label: "Admin" },
-            ].map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                onClick={() => setMenuOpen(false)}
-                className="text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-muted/60 transition-colors"
-              >
+            {[...navLinks, { to: "/admin", label: "Admin" }].map((link) => (
+              <Link key={link.to} to={link.to} onClick={() => setMenuOpen(false)}
+                className="text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-muted/60 transition-colors">
                 {link.label}
               </Link>
             ))}
