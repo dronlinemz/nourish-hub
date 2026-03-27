@@ -1,7 +1,13 @@
 import React, { createContext, useContext, useState } from "react";
-import type { Product, Supplier, Order, AdCampaign, DeliveryZone } from "@/types/store";
+import type { Product, Supplier, Order, AdCampaign, DeliveryZone, PremiumSettings } from "@/types/store";
 import { MOCK_SUPPLIERS, MOCK_PRODUCTS } from "@/data/mockData";
 import { DELIVERY_FEES as DEFAULT_DELIVERY_FEES } from "@/types/store";
+
+const DEFAULT_PREMIUM_SETTINGS: PremiumSettings = {
+  adDiscount: 0.15,
+  prioritySlots: 2,
+  subscriptionMonths: 6,
+};
 
 const MOCK_ADS: AdCampaign[] = [
   {
