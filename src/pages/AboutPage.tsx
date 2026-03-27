@@ -1,4 +1,6 @@
+import { Link } from "react-router-dom";
 import { Shield, Truck, CreditCard, Heart, Users, Target, Sparkles, BadgeCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
@@ -104,28 +106,10 @@ const AboutPage = () => {
             ))}
           </div>
         </section>
-
-        {/* Partners */}
-        <section>
-          <h2 className="text-xl font-display font-bold text-center mb-8">Os Nossos Fornecedores</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {suppliers.map((s) => (
-              <Card key={s.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-5 text-center">
-                  <div className="w-14 h-14 rounded-xl bg-secondary/10 flex items-center justify-center mx-auto mb-3 text-secondary font-display font-bold text-lg">
-                    {s.name.charAt(0)}
-                  </div>
-                  <h3 className="font-display font-bold text-sm mb-1">{s.name}</h3>
-                  {s.verified && (
-                    <span className="badge-verified text-[10px] mb-2">
-                      <BadgeCheck className="w-3 h-3" /> Verificado
-                    </span>
-                  )}
-                  <p className="text-xs text-muted-foreground line-clamp-2 mt-2">{s.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+        {/* CTA */}
+        <section className="text-center">
+          <p className="text-muted-foreground mb-4">Quer conhecer os nossos fornecedores verificados?</p>
+          <Link to="/parceiros"><Button className="bg-primary text-primary-foreground rounded-xl px-6">Ver Parceiros</Button></Link>
         </section>
       </main>
 

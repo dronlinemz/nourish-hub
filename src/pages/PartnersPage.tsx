@@ -44,8 +44,8 @@ const PartnersPage = () => {
             <div>
               <h2 className="font-display font-bold text-lg mb-1">Programa Premium DrOnline</h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Parceiros com o selo <strong className="text-amber-600">Premium</strong> têm uma subscrição semestral que lhes garante
-                destaque prioritário no marketplace, inserção preferencial em 2 espaços publicitários com <strong>15% de desconto</strong> nas taxas,
+                Parceiros com o selo <strong className="text-amber-600">Premium</strong> têm uma subscrição que lhes garante
+                destaque prioritário no marketplace, inserção preferencial em espaços publicitários com desconto nas taxas,
                 e recomendação especial da DrOnline aos consumidores.
               </p>
             </div>
