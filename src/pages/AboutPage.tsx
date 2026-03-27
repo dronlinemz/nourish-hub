@@ -1,4 +1,6 @@
+import { Link } from "react-router-dom";
 import { Shield, Truck, CreditCard, Heart, Users, Target, Sparkles, BadgeCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
