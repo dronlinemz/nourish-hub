@@ -38,6 +38,41 @@ const MOCK_ADS: AdCampaign[] = [
     space: "product-detail", status: "paused", startDate: "2026-03-10", endDate: "2026-06-10",
     expectedRevenue: 8000, realizedRevenue: 1200, impressions: 3200, clicks: 85, createdAt: "2026-03-10T00:00:00Z",
   },
+  {
+    id: "ad-5", partner: "DrOnline Market", title: "Proteína Whey Isolada 1kg",
+    description: "Produto em destaque", cta: "Ver", url: "prod-1",
+    image: "https://images.unsplash.com/photo-1593095948071-474c5cc2c1cf?w=400&h=400&fit=crop",
+    space: "featured", status: "active", startDate: "2026-03-01", endDate: "2026-12-31",
+    expectedRevenue: 0, realizedRevenue: 0, impressions: 0, clicks: 0, createdAt: "2026-03-01T00:00:00Z",
+  },
+  {
+    id: "ad-6", partner: "DrOnline Market", title: "Kit Primeiros Socorros Completo",
+    description: "Produto em destaque", cta: "Ver", url: "prod-2",
+    image: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?w=400&h=400&fit=crop",
+    space: "featured", status: "active", startDate: "2026-03-01", endDate: "2026-12-31",
+    expectedRevenue: 0, realizedRevenue: 0, impressions: 0, clicks: 0, createdAt: "2026-03-01T00:00:00Z",
+  },
+  {
+    id: "ad-7", partner: "DrOnline Market", title: "Granola Orgânica com Frutos Secos",
+    description: "Produto em destaque", cta: "Ver", url: "prod-4",
+    image: "https://images.unsplash.com/photo-1517093157656-b9eccef91cb1?w=400&h=400&fit=crop",
+    space: "featured", status: "active", startDate: "2026-03-01", endDate: "2026-12-31",
+    expectedRevenue: 0, realizedRevenue: 0, impressions: 0, clicks: 0, createdAt: "2026-03-01T00:00:00Z",
+  },
+  {
+    id: "ad-8", partner: "DrOnline Market", title: "Multivitamínico Completo",
+    description: "Produto em destaque", cta: "Ver", url: "prod-7",
+    image: "https://images.unsplash.com/photo-1550572017-edd951aa8f72?w=400&h=400&fit=crop",
+    space: "featured", status: "active", startDate: "2026-03-01", endDate: "2026-12-31",
+    expectedRevenue: 0, realizedRevenue: 0, impressions: 0, clicks: 0, createdAt: "2026-03-01T00:00:00Z",
+  },
+  {
+    id: "ad-9", partner: "DrOnline Market", title: "Balança Digital Inteligente",
+    description: "Produto em destaque", cta: "Ver", url: "prod-10",
+    image: "https://images.unsplash.com/photo-1523676060187-f55189cb4e28?w=400&h=400&fit=crop",
+    space: "featured", status: "active", startDate: "2026-03-01", endDate: "2026-12-31",
+    expectedRevenue: 0, realizedRevenue: 0, impressions: 0, clicks: 0, createdAt: "2026-03-01T00:00:00Z",
+  },
 ];
 
 interface StoreContextType {
