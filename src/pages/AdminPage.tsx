@@ -752,14 +752,28 @@ const ReportsTab = () => {
   );
 };
 
-/* ─── Settings (Delivery Fees) ─── */
+/* ─── Settings (Delivery Fees + Premium) ─── */
 const SettingsTab = () => {
-  const { deliveryFees, setDeliveryFees } = useStore();
+  const { deliveryFees, setDeliveryFees, premiumSettings, setPremiumSettings } = useStore();
   const [fees, setFees] = useState({ maputo: String(deliveryFees.maputo), matola: String(deliveryFees.matola) });
+  const [premium, setPremium] = useState({
+    adDiscount: String(Math.round(premiumSettings.adDiscount * 100)),
+    prioritySlots: String(premiumSettings.prioritySlots),
+    subscriptionMonths: String(premiumSettings.subscriptionMonths),
+  });
 
-  const handleSave = () => {
+  const handleSaveFees = () => {
     setDeliveryFees({ maputo: Number(fees.maputo) || 0, matola: Number(fees.matola) || 0 });
     toast.success("Taxas de entrega actualizadas");
+  };
+
+  const handleSavePremium = () => {
+    setPremiumSettings({
+      adDiscount: (Number(premium.adDiscount) || 15) / 100,
+      prioritySlots: Number(premium.prioritySlots) || 2,
+      subscriptionMonths: Number(premium.subscriptionMonths) || 6,
+    });
+    toast.success("Benefícios Premium actualizados");
   };
 
   return (
@@ -778,23 +792,39 @@ const SettingsTab = () => {
               </div>
             ))}
           </div>
-          <Button onClick={handleSave} className="bg-primary text-primary-foreground rounded-xl"><CheckCircle className="w-4 h-4 mr-1.5" /> Guardar Taxas</Button>
+          <Button onClick={handleSaveFees} className="bg-primary text-primary-foreground rounded-xl"><CheckCircle className="w-4 h-4 mr-1.5" /> Guardar Taxas</Button>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Crown className="w-5 h-5 text-amber-500" /> Programa Premium</CardTitle></CardHeader>
-        <CardContent>
+        <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Crown className="w-5 h-5 text-amber-500" /> Programa Premium — Benefícios</CardTitle></CardHeader>
+        <CardContent className="space-y-5">
+          <p className="text-sm text-muted-foreground">Configure os benefícios do pacote Premium. As alterações serão aplicadas a todas as novas subscrições e reflectidas no marketplace.</p>
+          <div className="grid sm:grid-cols-3 gap-4 max-w-xl">
+            <div>
+              <Label>Desconto Publicidade (%)</Label>
+              <Input type="number" min="0" max="100" value={premium.adDiscount} onChange={(e) => setPremium({ ...premium, adDiscount: e.target.value })} className="rounded-xl" />
+            </div>
+            <div>
+              <Label>Espaços Prioritários</Label>
+              <Input type="number" min="0" max="10" value={premium.prioritySlots} onChange={(e) => setPremium({ ...premium, prioritySlots: e.target.value })} className="rounded-xl" />
+            </div>
+            <div>
+              <Label>Duração (meses)</Label>
+              <Input type="number" min="1" max="24" value={premium.subscriptionMonths} onChange={(e) => setPremium({ ...premium, subscriptionMonths: e.target.value })} className="rounded-xl" />
+            </div>
+          </div>
           <div className="bg-amber-50 dark:bg-amber-500/10 rounded-xl p-4 space-y-2 text-sm text-muted-foreground">
-            <p><strong>Subscrição Semestral</strong> — Os parceiros Premium pagam uma taxa semestral para aceder a:</p>
+            <p><strong>Resumo actual do pacote:</strong></p>
             <ul className="list-disc list-inside space-y-1 ml-2">
               <li>Destaque prioritário e selo Premium no marketplace</li>
-              <li>Inserção preferencial em 2 espaços publicitários</li>
-              <li>15% de desconto nas taxas de publicidade</li>
+              <li>{premium.prioritySlots} espaços publicitários com prioridade de inserção</li>
+              <li>{premium.adDiscount}% de desconto nas taxas de publicidade</li>
+              <li>Subscrição de {premium.subscriptionMonths} meses</li>
               <li>Recomendação especial DrOnline</li>
             </ul>
-            <p className="text-xs mt-3">Gerir subscrições Premium na aba <strong>Fornecedores</strong> → Editar → Programa Premium.</p>
           </div>
+          <Button onClick={handleSavePremium} className="bg-primary text-primary-foreground rounded-xl"><CheckCircle className="w-4 h-4 mr-1.5" /> Guardar Benefícios</Button>
         </CardContent>
       </Card>
     </div>
