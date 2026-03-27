@@ -247,7 +247,7 @@ const ProductsTab = () => {
 
 /* ─── Suppliers ─── */
 const SuppliersTab = () => {
-  const { suppliers, products, setSuppliers } = useStore();
+  const { suppliers, products, setSuppliers, premiumSettings } = useStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
   const [form, setForm] = useState({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, premiumActive: false, premiumStart: "", premiumEnd: "" });
@@ -257,7 +257,6 @@ const SuppliersTab = () => {
 
   const handleSave = () => {
     if (!form.name || !form.contactEmail) { toast.error("Preencha os campos obrigatórios"); return; }
-    const { premiumSettings } = useStore.call ? { premiumSettings: { adDiscount: 0.15, prioritySlots: 2, subscriptionMonths: 6 } } : store;
     const data: Supplier = {
       id: editSupplier?.id || `sup-${Date.now()}`, name: form.name, description: form.description,
       contactEmail: form.contactEmail, contactPhone: form.contactPhone,
