@@ -66,6 +66,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [orders, setOrders] = useState<Order[]>([]);
   const [adCampaigns, setAdCampaigns] = useState<AdCampaign[]>(MOCK_ADS);
   const [deliveryFees, setDeliveryFees] = useState<Record<DeliveryZone, number>>(DEFAULT_DELIVERY_FEES);
+  const [premiumSettings, setPremiumSettings] = useState<PremiumSettings>(DEFAULT_PREMIUM_SETTINGS);
 
   const getSupplier = (id: string) => suppliers.find((s) => s.id === id);
   const addOrder = (order: Order) => setOrders((prev) => [order, ...prev]);
