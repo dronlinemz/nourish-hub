@@ -107,7 +107,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 
 /* ─── Advertising ─── */
 
-export type AdSpace = "hero" | "catalog-wide" | "catalog-sidebar" | "product-detail" | "cart-sidebar";
+export type AdSpace = "hero" | "catalog-wide" | "catalog-sidebar" | "product-detail" | "cart-sidebar" | "featured";
 
 export const AD_SPACE_LABELS: Record<AdSpace, string> = {
   "hero": "Hero (Banner Principal)",
@@ -115,7 +115,14 @@ export const AD_SPACE_LABELS: Record<AdSpace, string> = {
   "catalog-sidebar": "Catálogo (Sidebar)",
   "product-detail": "Detalhe Produto",
   "cart-sidebar": "Carrinho (Sidebar)",
+  "featured": "Destaques (Produtos)",
 };
+
+export interface PremiumSettings {
+  adDiscount: number;       // e.g. 0.15 = 15%
+  prioritySlots: number;    // e.g. 2
+  subscriptionMonths: number; // e.g. 6
+}
 
 export type AdStatus = "active" | "paused" | "scheduled" | "ended";
 
