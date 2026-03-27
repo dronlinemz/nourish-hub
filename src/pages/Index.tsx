@@ -47,7 +47,7 @@ const HERO_SLIDES = [
 ];
 
 const Index = () => {
-  const { products } = useStore();
+  const { products, adCampaigns } = useStore();
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [search, setSearch] = useState("");
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -61,10 +61,21 @@ const Index = () => {
     return () => clearInterval(timer);
   }, [nextSlide]);
 
-  const featuredProducts = useMemo(
-    () => products.filter((p) => p.featured),
-    [products]
-  );
+  // Featured products: controlled by "featured" ad space campaigns
+  const featuredProductIds = useMemo(() => {
+    return adCampaigns
+      .filter((a) => a.space === "featured" && a.status === "active")
+      .map((a) => a.url) // url stores the product ID for featured ads
+      .filter(Boolean);
+  }, [adCampaigns]);
+
+  const featuredProducts = useMemo(() => {
+    // If there are featured ad campaigns, use those; otherwise fall back to product.featured flag
+    if (featuredProductIds.length > 0) {
+      return products.filter((p) => featuredProductIds.includes(p.id));
+    }
+    return products.filter((p) => p.featured);
+  }, [products, featuredProductIds]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
