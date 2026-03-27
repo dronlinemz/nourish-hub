@@ -76,7 +76,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   return (
     <StoreContext.Provider
-      value={{ products, suppliers, orders, adCampaigns, deliveryFees, setProducts, setSuppliers, setOrders, setAdCampaigns, setDeliveryFees, getSupplier, addOrder, updateOrderStatus }}
+      value={{ products, suppliers, orders, adCampaigns, deliveryFees, premiumSettings, setProducts, setSuppliers, setOrders, setAdCampaigns, setDeliveryFees, setPremiumSettings, getSupplier, addOrder, updateOrderStatus }}
     >
       {children}
     </StoreContext.Provider>
