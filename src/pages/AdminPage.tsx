@@ -258,11 +258,12 @@ const SuppliersTab = () => {
 
   const handleSave = () => {
     if (!form.name || !form.contactEmail) { toast.error("Preencha os campos obrigatórios"); return; }
+    const { premiumSettings } = useStore.call ? { premiumSettings: { adDiscount: 0.15, prioritySlots: 2, subscriptionMonths: 6 } } : store;
     const data: Supplier = {
       id: editSupplier?.id || `sup-${Date.now()}`, name: form.name, description: form.description,
       contactEmail: form.contactEmail, contactPhone: form.contactPhone,
       rating: Number(form.rating), verified: form.verified,
-      premium: form.premiumActive ? { active: true, startDate: form.premiumStart, endDate: form.premiumEnd, adDiscount: 0.15, prioritySlots: 2 } : undefined,
+      premium: form.premiumActive ? { active: true, startDate: form.premiumStart, endDate: form.premiumEnd, adDiscount: premiumSettings.adDiscount, prioritySlots: premiumSettings.prioritySlots } : undefined,
       createdAt: editSupplier?.createdAt || new Date().toISOString(),
     };
     if (editSupplier) { setSuppliers((prev) => prev.map((s) => (s.id === data.id ? data : s))); toast.success("Fornecedor actualizado"); }
