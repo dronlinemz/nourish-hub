@@ -309,8 +309,9 @@ const SuppliersTab = () => {
                 {form.premiumActive && (
                   <div className="bg-amber-50 dark:bg-amber-500/10 rounded-xl p-3 text-xs text-muted-foreground">
                     <p>• Destaque prioritário no marketplace</p>
-                    <p>• 2 espaços publicitários com prioridade</p>
-                    <p>• 15% de desconto nas taxas de publicidade</p>
+                    <p>• {premiumSettings.prioritySlots} espaços publicitários com prioridade</p>
+                    <p>• {Math.round(premiumSettings.adDiscount * 100)}% de desconto nas taxas de publicidade</p>
+                    <p>• Subscrição de {premiumSettings.subscriptionMonths} meses</p>
                     <p>• Selo Premium DrOnline</p>
                   </div>
                 )}
