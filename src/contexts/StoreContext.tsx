@@ -46,11 +46,13 @@ interface StoreContextType {
   orders: Order[];
   adCampaigns: AdCampaign[];
   deliveryFees: Record<DeliveryZone, number>;
+  premiumSettings: PremiumSettings;
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   setAdCampaigns: React.Dispatch<React.SetStateAction<AdCampaign[]>>;
   setDeliveryFees: React.Dispatch<React.SetStateAction<Record<DeliveryZone, number>>>;
+  setPremiumSettings: React.Dispatch<React.SetStateAction<PremiumSettings>>;
   getSupplier: (id: string) => Supplier | undefined;
   addOrder: (order: Order) => void;
   updateOrderStatus: (orderId: string, status: Order["status"]) => void;
