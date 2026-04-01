@@ -336,7 +336,9 @@ const SuppliersTab = () => {
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary font-display font-bold text-sm">{s.name.charAt(0)}</div>
+                    <div className="w-11 h-11 rounded-xl bg-secondary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {s.logo ? <img src={s.logo} alt={s.name} className="w-full h-full object-cover" /> : <span className="text-secondary font-display font-bold text-sm">{s.name.charAt(0)}</span>}
+                    </div>
                     <div>
                       <div className="flex items-center gap-1.5"><h3 className="font-display font-bold text-sm">{s.name}</h3>{s.verified && <BadgeCheck className="w-4 h-4 text-primary" />}</div>
                       <div className="flex items-center gap-1 mt-0.5"><Star className="w-3 h-3 text-accent fill-accent" /><span className="text-xs font-medium">{s.rating}</span><span className="text-xs text-muted-foreground">• {productCount} produtos</span></div>

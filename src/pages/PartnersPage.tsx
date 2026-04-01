@@ -67,10 +67,10 @@ const PartnersPage = () => {
                 )}
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4 mb-4">
-                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-display font-bold text-lg ${
+                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-display font-bold text-lg overflow-hidden ${
                       isPremium ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"
                     }`}>
-                      {supplier.name.charAt(0)}
+                      {supplier.logo ? <img src={supplier.logo} alt={supplier.name} className="w-full h-full object-cover" /> : supplier.name.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
