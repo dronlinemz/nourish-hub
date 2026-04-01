@@ -93,9 +93,10 @@ const Index = () => {
         !search ||
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.description.toLowerCase().includes(search.toLowerCase());
-      return matchesCat && matchesSearch;
+      const matchesSupplier = !supplierFilter || p.supplierId === supplierFilter;
+      return matchesCat && matchesSearch && matchesSupplier;
     });
-  }, [products, selectedCategory, search]);
+  }, [products, selectedCategory, search, supplierFilter]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
