@@ -250,7 +250,7 @@ const SuppliersTab = () => {
   const { suppliers, products, setSuppliers, premiumSettings } = useStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
-  const [form, setForm] = useState({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, premiumActive: false, premiumStart: "", premiumEnd: "" });
+  const [form, setForm] = useState({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, logo: "", premiumActive: false, premiumStart: "", premiumEnd: "" });
 
   const openNew = () => { setEditSupplier(null); setForm({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, premiumActive: false, premiumStart: "", premiumEnd: "" }); setDialogOpen(true); };
   const openEdit = (s: Supplier) => { setEditSupplier(s); setForm({ name: s.name, description: s.description, contactEmail: s.contactEmail, contactPhone: s.contactPhone, rating: String(s.rating), verified: s.verified, premiumActive: s.premium?.active || false, premiumStart: s.premium?.startDate || "", premiumEnd: s.premium?.endDate || "" }); setDialogOpen(true); };
