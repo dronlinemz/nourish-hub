@@ -67,7 +67,7 @@ const AdminPage = () => {
       </aside>
 
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-sidebar z-50 border-t border-sidebar-border flex safe-area-bottom">
-        {tabs.slice(0, 6).map((t) => (
+        {tabs.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex-1 flex flex-col items-center py-3 text-xs transition-colors ${tab === t.id ? "text-sidebar-primary" : "text-sidebar-foreground/50"}`}>
             {t.icon}<span className="mt-1 font-medium">{t.label}</span>

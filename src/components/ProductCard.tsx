@@ -18,6 +18,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (product.stock <= 0) {
+      toast.error(`${product.name} está esgotado`);
+      return;
+    }
     addItem(product);
     toast.success(`${product.name} adicionado ao carrinho`);
   };
