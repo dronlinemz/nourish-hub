@@ -47,10 +47,19 @@ const HERO_SLIDES = [
 ];
 
 const Index = () => {
-  const { products, adCampaigns } = useStore();
+  const { products, adCampaigns, suppliers } = useStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [search, setSearch] = useState("");
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  const supplierFilter = searchParams.get("fornecedor");
+  const activeSupplier = supplierFilter ? suppliers.find((s) => s.id === supplierFilter) : null;
+
+  const clearSupplierFilter = () => {
+    searchParams.delete("fornecedor");
+    setSearchParams(searchParams);
+  };
 
   const nextSlide = useCallback(() => setCurrentSlide((s) => (s + 1) % HERO_SLIDES.length), []);
   const prevSlide = useCallback(() => setCurrentSlide((s) => (s - 1 + HERO_SLIDES.length) % HERO_SLIDES.length), []);
