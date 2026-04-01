@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { Search, TrendingUp, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Shield, Truck, CreditCard } from "lucide-react";
+import { Search, TrendingUp, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Shield, Truck, CreditCard, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
@@ -9,7 +9,7 @@ import StoreFooter from "@/components/StoreFooter";
 import PartnerBanner from "@/components/PartnerBanner";
 import { useStore } from "@/contexts/StoreContext";
 import type { Category } from "@/types/store";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 const HERO_SLIDES = [
   {
@@ -47,10 +47,19 @@ const HERO_SLIDES = [
 ];
 
 const Index = () => {
-  const { products, adCampaigns } = useStore();
+  const { products, adCampaigns, suppliers } = useStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [search, setSearch] = useState("");
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  const supplierFilter = searchParams.get("fornecedor");
+  const activeSupplier = supplierFilter ? suppliers.find((s) => s.id === supplierFilter) : null;
+
+  const clearSupplierFilter = () => {
+    searchParams.delete("fornecedor");
+    setSearchParams(searchParams);
+  };
 
   const nextSlide = useCallback(() => setCurrentSlide((s) => (s + 1) % HERO_SLIDES.length), []);
   const prevSlide = useCallback(() => setCurrentSlide((s) => (s - 1 + HERO_SLIDES.length) % HERO_SLIDES.length), []);
@@ -84,9 +93,10 @@ const Index = () => {
         !search ||
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.description.toLowerCase().includes(search.toLowerCase());
-      return matchesCat && matchesSearch;
+      const matchesSupplier = !supplierFilter || p.supplierId === supplierFilter;
+      return matchesCat && matchesSearch && matchesSupplier;
     });
-  }, [products, selectedCategory, search]);
+  }, [products, selectedCategory, search, supplierFilter]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -244,11 +254,27 @@ const Index = () => {
           </div>
         </div>
 
+        {/* Supplier filter banner */}
+        {activeSupplier && (
+          <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center font-display font-bold text-primary overflow-hidden flex-shrink-0">
+              {activeSupplier.logo ? <img src={activeSupplier.logo} alt={activeSupplier.name} className="w-full h-full object-cover" /> : activeSupplier.name.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-display font-semibold truncate">Produtos de {activeSupplier.name}</p>
+              <p className="text-xs text-muted-foreground">{filteredProducts.length} {filteredProducts.length === 1 ? "produto" : "produtos"} disponíveis</p>
+            </div>
+            <Button variant="ghost" size="icon" className="flex-shrink-0" onClick={clearSupplierFilter}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+
         {/* Categories & Products */}
         <section className="animate-fade-in">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-xl font-display font-bold">
-              {selectedCategory ? "Categoria" : "Todos os Produtos"}
+              {activeSupplier ? `Produtos de ${activeSupplier.name}` : selectedCategory ? "Categoria" : "Todos os Produtos"}
             </h2>
             <span className="text-sm text-muted-foreground">
               {filteredProducts.length} {filteredProducts.length === 1 ? "produto" : "produtos"}
