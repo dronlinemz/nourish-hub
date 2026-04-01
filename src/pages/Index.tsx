@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { Search, TrendingUp, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Shield, Truck, CreditCard } from "lucide-react";
+import { Search, TrendingUp, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Shield, Truck, CreditCard, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
@@ -9,7 +9,7 @@ import StoreFooter from "@/components/StoreFooter";
 import PartnerBanner from "@/components/PartnerBanner";
 import { useStore } from "@/contexts/StoreContext";
 import type { Category } from "@/types/store";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 const HERO_SLIDES = [
   {

@@ -89,7 +89,7 @@ const AboutPage = () => {
           <div className="grid sm:grid-cols-3 gap-5">
             {[
               { icon: <BadgeCheck className="w-5 h-5 text-primary" />, title: "Produtos Verificados", desc: "Cada produto passa por um processo de verificação rigoroso antes de ser publicado." },
-              { icon: <Truck className="w-5 h-5 text-primary" />, title: "Entrega Nacional", desc: "Entregamos em todo o território moçambicano com rastreamento em tempo real." },
+              { icon: <Truck className="w-5 h-5 text-primary" />, title: "Entrega Nacional", desc: "Entregamos em Maputo e Matola com taxa fixa. Entregas para províncias estão sujeitas à taxa de envio dos provedores de serviço de correio expresso." },
               { icon: <CreditCard className="w-5 h-5 text-primary" />, title: "Pagamento Seguro", desc: "Aceite M-Pesa e transferência bancária com verificação de comprovativos." },
             ].map((item) => (
               <Card key={item.title}>
