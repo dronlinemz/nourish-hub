@@ -254,11 +254,27 @@ const Index = () => {
           </div>
         </div>
 
+        {/* Supplier filter banner */}
+        {activeSupplier && (
+          <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center font-display font-bold text-primary overflow-hidden flex-shrink-0">
+              {activeSupplier.logo ? <img src={activeSupplier.logo} alt={activeSupplier.name} className="w-full h-full object-cover" /> : activeSupplier.name.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-display font-semibold truncate">Produtos de {activeSupplier.name}</p>
+              <p className="text-xs text-muted-foreground">{filteredProducts.length} {filteredProducts.length === 1 ? "produto" : "produtos"} disponíveis</p>
+            </div>
+            <Button variant="ghost" size="icon" className="flex-shrink-0" onClick={clearSupplierFilter}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+
         {/* Categories & Products */}
         <section className="animate-fade-in">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-xl font-display font-bold">
-              {selectedCategory ? "Categoria" : "Todos os Produtos"}
+              {activeSupplier ? `Produtos de ${activeSupplier.name}` : selectedCategory ? "Categoria" : "Todos os Produtos"}
             </h2>
             <span className="text-sm text-muted-foreground">
               {filteredProducts.length} {filteredProducts.length === 1 ? "produto" : "produtos"}
