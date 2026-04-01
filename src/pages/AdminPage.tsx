@@ -67,7 +67,7 @@ const AdminPage = () => {
       </aside>
 
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-sidebar z-50 border-t border-sidebar-border flex safe-area-bottom">
-        {tabs.slice(0, 6).map((t) => (
+        {tabs.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className={`flex-1 flex flex-col items-center py-3 text-xs transition-colors ${tab === t.id ? "text-sidebar-primary" : "text-sidebar-foreground/50"}`}>
             {t.icon}<span className="mt-1 font-medium">{t.label}</span>
@@ -250,15 +250,16 @@ const SuppliersTab = () => {
   const { suppliers, products, setSuppliers, premiumSettings } = useStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
-  const [form, setForm] = useState({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, premiumActive: false, premiumStart: "", premiumEnd: "" });
+  const [form, setForm] = useState({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, logo: "", premiumActive: false, premiumStart: "", premiumEnd: "" });
 
-  const openNew = () => { setEditSupplier(null); setForm({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, premiumActive: false, premiumStart: "", premiumEnd: "" }); setDialogOpen(true); };
-  const openEdit = (s: Supplier) => { setEditSupplier(s); setForm({ name: s.name, description: s.description, contactEmail: s.contactEmail, contactPhone: s.contactPhone, rating: String(s.rating), verified: s.verified, premiumActive: s.premium?.active || false, premiumStart: s.premium?.startDate || "", premiumEnd: s.premium?.endDate || "" }); setDialogOpen(true); };
+  const openNew = () => { setEditSupplier(null); setForm({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, logo: "", premiumActive: false, premiumStart: "", premiumEnd: "" }); setDialogOpen(true); };
+  const openEdit = (s: Supplier) => { setEditSupplier(s); setForm({ name: s.name, description: s.description, contactEmail: s.contactEmail, contactPhone: s.contactPhone, rating: String(s.rating), verified: s.verified, logo: s.logo || "", premiumActive: s.premium?.active || false, premiumStart: s.premium?.startDate || "", premiumEnd: s.premium?.endDate || "" }); setDialogOpen(true); };
 
   const handleSave = () => {
     if (!form.name || !form.contactEmail) { toast.error("Preencha os campos obrigatórios"); return; }
     const data: Supplier = {
       id: editSupplier?.id || `sup-${Date.now()}`, name: form.name, description: form.description,
+      logo: form.logo || undefined,
       contactEmail: form.contactEmail, contactPhone: form.contactPhone,
       rating: Number(form.rating), verified: form.verified,
       premium: form.premiumActive ? { active: true, startDate: form.premiumStart, endDate: form.premiumEnd, adDiscount: premiumSettings.adDiscount, prioritySlots: premiumSettings.prioritySlots } : undefined,
@@ -282,6 +283,7 @@ const SuppliersTab = () => {
             <div className="space-y-4 mt-4">
               <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl" /></div>
               <div><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="rounded-xl" /></div>
+              <div><Label>URL do Logo</Label><Input value={form.logo} onChange={(e) => setForm({ ...form, logo: e.target.value })} placeholder="https://..." className="rounded-xl" /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>Email *</Label><Input type="email" value={form.contactEmail} onChange={(e) => setForm({ ...form, contactEmail: e.target.value })} className="rounded-xl" /></div>
                 <div><Label>Telefone</Label><Input value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} className="rounded-xl" /></div>
@@ -334,7 +336,9 @@ const SuppliersTab = () => {
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary font-display font-bold text-sm">{s.name.charAt(0)}</div>
+                    <div className="w-11 h-11 rounded-xl bg-secondary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {s.logo ? <img src={s.logo} alt={s.name} className="w-full h-full object-cover" /> : <span className="text-secondary font-display font-bold text-sm">{s.name.charAt(0)}</span>}
+                    </div>
                     <div>
                       <div className="flex items-center gap-1.5"><h3 className="font-display font-bold text-sm">{s.name}</h3>{s.verified && <BadgeCheck className="w-4 h-4 text-primary" />}</div>
                       <div className="flex items-center gap-1 mt-0.5"><Star className="w-3 h-3 text-accent fill-accent" /><span className="text-xs font-medium">{s.rating}</span><span className="text-xs text-muted-foreground">• {productCount} produtos</span></div>

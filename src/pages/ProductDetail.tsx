@@ -48,6 +48,14 @@ const ProductDetail = () => {
     : null;
 
   const handleAdd = () => {
+    if (product.stock <= 0) {
+      toast.error("Produto esgotado");
+      return;
+    }
+    if (qty > product.stock) {
+      toast.error(`Apenas ${product.stock} unidades disponíveis`);
+      return;
+    }
     addItem(product, qty);
     toast.success(`${qty}x ${product.name} adicionado ao carrinho`);
   };

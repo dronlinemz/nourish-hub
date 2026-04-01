@@ -26,7 +26,7 @@ const StoreFooter = () => {
             <nav className="flex flex-col gap-2.5">
               {[
                 { to: "/", label: "Loja" },
-                { to: "/categorias", label: "Categorias" },
+                { to: "/parceiros", label: "Parceiros" },
                 { to: "/sobre", label: "Sobre Nós" },
               ].map((link) => (
                 <Link key={link.to} to={link.to} className="text-sm text-secondary-foreground/70 hover:text-secondary-foreground transition-colors">
