@@ -259,6 +259,7 @@ const SuppliersTab = () => {
     if (!form.name || !form.contactEmail) { toast.error("Preencha os campos obrigatórios"); return; }
     const data: Supplier = {
       id: editSupplier?.id || `sup-${Date.now()}`, name: form.name, description: form.description,
+      logo: form.logo || undefined,
       contactEmail: form.contactEmail, contactPhone: form.contactPhone,
       rating: Number(form.rating), verified: form.verified,
       premium: form.premiumActive ? { active: true, startDate: form.premiumStart, endDate: form.premiumEnd, adDiscount: premiumSettings.adDiscount, prioritySlots: premiumSettings.prioritySlots } : undefined,
