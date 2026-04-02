@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Package, Users, ShoppingBag, ArrowLeft, Plus, Pencil, Trash2,
   BadgeCheck, CheckCircle, XCircle, Truck, Star, TrendingUp, AlertCircle,
   BarChart3, DollarSign, Eye, Search, Megaphone, Play, Pause, Calendar,
-  MousePointerClick, Monitor, FileText, Download, Crown, Settings, Filter
+  MousePointerClick, Monitor, FileText, Download, Crown, Settings, Filter, MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -171,9 +171,27 @@ const ProductsTab = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState<Category | "all">("all");
+  const [filterSupplier, setFilterSupplier] = useState<string>("all");
+  const [filterStock, setFilterStock] = useState<"all" | "in-stock" | "low" | "out">("all");
   const [form, setForm] = useState({ name: "", description: "", price: "", originalPrice: "", image: "", category: "" as Category | "", supplierId: "", stock: "", featured: false });
 
-  const filtered = products.filter((p) => !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filtered = useMemo(() => {
+    return products.filter((p) => {
+      if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      if (filterCategory !== "all" && p.category !== filterCategory) return false;
+      if (filterSupplier !== "all" && p.supplierId !== filterSupplier) return false;
+      if (filterStock === "out" && p.stock > 0) return false;
+      if (filterStock === "low" && (p.stock === 0 || p.stock >= 10)) return false;
+      if (filterStock === "in-stock" && p.stock < 10) return false;
+      return true;
+    });
+  }, [products, searchQuery, filterCategory, filterSupplier, filterStock]);
+
+  const statsInStock = products.filter((p) => p.stock >= 10).length;
+  const statsLowStock = products.filter((p) => p.stock > 0 && p.stock < 10).length;
+  const statsOutOfStock = products.filter((p) => p.stock === 0).length;
+  const statsFeatured = products.filter((p) => p.featured).length;
 
   const openNew = () => { setEditProduct(null); setForm({ name: "", description: "", price: "", originalPrice: "", image: "", category: "", supplierId: "", stock: "", featured: false }); setDialogOpen(true); };
   const openEdit = (p: Product) => { setEditProduct(p); setForm({ name: p.name, description: p.description, price: String(p.price), originalPrice: p.originalPrice ? String(p.originalPrice) : "", image: p.image, category: p.category, supplierId: p.supplierId, stock: String(p.stock), featured: p.featured }); setDialogOpen(true); };
@@ -187,11 +205,21 @@ const ProductsTab = () => {
   };
 
   const handleDelete = (id: string) => { setProducts((prev) => prev.filter((p) => p.id !== id)); toast.success("Produto removido"); };
+  const toggleFeatured = (id: string) => { setProducts((prev) => prev.map((p) => p.id === id ? { ...p, featured: !p.featured } : p)); };
+
+  const stockBadge = (stock: number) => {
+    if (stock === 0) return <Badge variant="destructive" className="text-[10px] gap-1"><XCircle className="w-3 h-3" /> Esgotado</Badge>;
+    if (stock < 10) return <Badge className="text-[10px] gap-1 bg-amber-500/15 text-amber-600 border-amber-500/20 hover:bg-amber-500/20"><AlertCircle className="w-3 h-3" /> {stock} un.</Badge>;
+    return <Badge variant="secondary" className="text-[10px] gap-1"><CheckCircle className="w-3 h-3" /> {stock} un.</Badge>;
+  };
+
+  const hasFilters = searchQuery || filterCategory !== "all" || filterSupplier !== "all" || filterStock !== "all";
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div><h1 className="text-2xl md:text-3xl font-display font-bold">Produtos</h1><p className="text-sm text-muted-foreground">{products.length} produtos no catálogo</p></div>
+        <div><h1 className="text-2xl md:text-3xl font-display font-bold">Produtos</h1><p className="text-sm text-muted-foreground">Gerir catálogo e visibilidade na plataforma</p></div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild><Button onClick={openNew} className="bg-primary text-primary-foreground rounded-xl shadow-md shadow-primary/20"><Plus className="w-4 h-4 mr-1.5" /> Novo Produto</Button></DialogTrigger>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
@@ -217,30 +245,113 @@ const ProductsTab = () => {
           </DialogContent>
         </Dialog>
       </div>
-      <div className="relative max-w-sm"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Pesquisar produtos..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl" /></div>
-      <Card className="overflow-hidden">
-        <div className="hidden sm:grid grid-cols-[auto_1fr_120px_80px_80px_80px] gap-4 items-center px-5 py-3 bg-muted/50 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          <span className="w-10" /><span>Produto</span><span>Categoria</span><span className="text-right">Preço</span><span className="text-center">Stock</span><span className="text-center">Acções</span>
+
+      {/* Stats strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <button onClick={() => setFilterStock("all")} className={`p-3 rounded-xl border transition-all text-left ${filterStock === "all" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/30"}`}>
+          <p className="text-xl font-display font-bold">{products.length}</p>
+          <p className="text-[11px] text-muted-foreground">Total produtos</p>
+        </button>
+        <button onClick={() => setFilterStock("in-stock")} className={`p-3 rounded-xl border transition-all text-left ${filterStock === "in-stock" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/30"}`}>
+          <p className="text-xl font-display font-bold text-primary">{statsInStock}</p>
+          <p className="text-[11px] text-muted-foreground">Em stock</p>
+        </button>
+        <button onClick={() => setFilterStock("low")} className={`p-3 rounded-xl border transition-all text-left ${filterStock === "low" ? "border-amber-500 bg-amber-500/5" : "border-border bg-card hover:border-amber-500/30"}`}>
+          <p className="text-xl font-display font-bold text-amber-600">{statsLowStock}</p>
+          <p className="text-[11px] text-muted-foreground">Stock baixo</p>
+        </button>
+        <button onClick={() => setFilterStock("out")} className={`p-3 rounded-xl border transition-all text-left ${filterStock === "out" ? "border-destructive bg-destructive/5" : "border-border bg-card hover:border-destructive/30"}`}>
+          <p className="text-xl font-display font-bold text-destructive">{statsOutOfStock}</p>
+          <p className="text-[11px] text-muted-foreground">Esgotados</p>
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Pesquisar produtos..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl" />
         </div>
-        <div className="divide-y divide-border">
-          {filtered.map((p) => {
-            const supplier = suppliers.find((s) => s.id === p.supplierId);
-            return (
-              <div key={p.id} className="grid grid-cols-[auto_1fr_auto] sm:grid-cols-[auto_1fr_120px_80px_80px_80px] gap-4 items-center px-5 py-3 hover:bg-muted/30 transition-colors">
-                <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover" />
-                <div className="min-w-0"><p className="font-display font-semibold text-sm truncate">{p.name}</p><p className="text-xs text-muted-foreground truncate">{supplier?.name}</p></div>
-                <Badge variant="secondary" className="hidden sm:inline-flex text-[10px] w-fit">{CATEGORY_LABELS[p.category]}</Badge>
-                <span className="hidden sm:block font-display font-bold text-sm text-right">{formatPrice(p.price)}</span>
-                <div className="hidden sm:flex justify-center"><Badge variant={p.stock < 10 ? "destructive" : "secondary"} className="text-[10px]">{p.stock}</Badge></div>
-                <div className="flex gap-1 justify-end sm:justify-center">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => openEdit(p)}><Pencil className="w-3.5 h-3.5" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => handleDelete(p.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+        <Select value={filterCategory} onValueChange={(v) => setFilterCategory(v as Category | "all")}>
+          <SelectTrigger className="w-[180px] rounded-xl"><SelectValue placeholder="Categoria" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas categorias</SelectItem>
+            {(Object.entries(CATEGORY_LABELS) as [Category, string][]).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}
+          </SelectContent>
+        </Select>
+        <Select value={filterSupplier} onValueChange={setFilterSupplier}>
+          <SelectTrigger className="w-[180px] rounded-xl"><SelectValue placeholder="Fornecedor" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos fornecedores</SelectItem>
+            {suppliers.map((s) => (<SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Active filters & results count */}
+      {hasFilters && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-muted-foreground">{filtered.length} de {products.length} produtos</span>
+          <span className="text-border">•</span>
+          <button onClick={() => { setSearchQuery(""); setFilterCategory("all"); setFilterSupplier("all"); setFilterStock("all"); }} className="text-xs text-primary hover:underline">Limpar filtros</button>
+        </div>
+      )}
+
+      {/* Product list */}
+      {filtered.length === 0 ? (
+        <Card className="p-12 text-center">
+          <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground/30" />
+          <p className="font-display font-semibold text-muted-foreground">Nenhum produto encontrado</p>
+          <p className="text-sm text-muted-foreground/70 mt-1">Ajuste os filtros ou adicione novos produtos</p>
+        </Card>
+      ) : (
+        <Card className="overflow-hidden">
+          <div className="hidden lg:grid grid-cols-[48px_1fr_140px_140px_90px_100px_90px] gap-3 items-center px-5 py-3 bg-muted/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
+            <span />
+            <span>Produto</span>
+            <span>Categoria</span>
+            <span>Fornecedor</span>
+            <span className="text-right">Preço</span>
+            <span className="text-center">Stock</span>
+            <span className="text-center">Acções</span>
+          </div>
+          <div className="divide-y divide-border">
+            {filtered.map((p) => {
+              const supplier = suppliers.find((s) => s.id === p.supplierId);
+              return (
+                <div key={p.id} className={`grid grid-cols-[48px_1fr_auto] lg:grid-cols-[48px_1fr_140px_140px_90px_100px_90px] gap-3 items-center px-5 py-3.5 hover:bg-muted/30 transition-colors ${p.stock === 0 ? "opacity-60" : ""}`}>
+                  <img src={p.image} alt={p.name} className="w-12 h-12 rounded-xl object-cover border border-border" />
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-display font-semibold text-sm truncate">{p.name}</p>
+                      {p.featured && (
+                        <span className="flex-shrink-0 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 text-[10px] font-semibold">
+                          <Star className="w-2.5 h-2.5 fill-amber-500" /> Destaque
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate lg:hidden">{supplier?.name} • {CATEGORY_LABELS[p.category]}</p>
+                  </div>
+                  <Badge variant="outline" className="hidden lg:inline-flex text-[10px] w-fit">{CATEGORY_LABELS[p.category]}</Badge>
+                  <span className="hidden lg:block text-xs text-muted-foreground truncate">{supplier?.name}</span>
+                  <div className="hidden lg:block text-right">
+                    <span className="font-display font-bold text-sm">{formatPrice(p.price)}</span>
+                    {p.originalPrice && <p className="text-[10px] text-muted-foreground line-through">{formatPrice(p.originalPrice)}</p>}
+                  </div>
+                  <div className="hidden lg:flex justify-center">{stockBadge(p.stock)}</div>
+                  <div className="flex gap-0.5 justify-end lg:justify-center">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" title={p.featured ? "Remover destaque" : "Destacar"} onClick={() => toggleFeatured(p.id)}>
+                      <Star className={`w-3.5 h-3.5 ${p.featured ? "text-amber-500 fill-amber-500" : "text-muted-foreground"}`} />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => openEdit(p)}><Pencil className="w-3.5 h-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => handleDelete(p.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
+              );
+            })}
+          </div>
+        </Card>
+      )}
     </div>
   );
 };
@@ -342,7 +453,11 @@ const SuppliersTab = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-1.5"><h3 className="font-display font-bold text-sm">{s.name}</h3>{s.verified && <BadgeCheck className="w-4 h-4 text-primary" />}</div>
-                      <div className="flex items-center gap-1 mt-0.5"><Star className="w-3 h-3 text-accent fill-accent" /><span className="text-xs font-medium">{s.rating}</span><span className="text-xs text-muted-foreground">• {productCount} produtos</span></div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <div className="flex items-center gap-1"><Star className="w-3 h-3 text-accent fill-accent" /><span className="text-xs font-medium">{s.rating}</span></div>
+                        <span className="text-xs text-muted-foreground">• {productCount} produtos</span>
+                        {s.location && <span className="text-xs text-muted-foreground flex items-center gap-0.5">• <MapPin className="w-3 h-3" />{s.location}</span>}
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-0.5">
