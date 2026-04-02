@@ -250,16 +250,16 @@ const SuppliersTab = () => {
   const { suppliers, products, setSuppliers, premiumSettings } = useStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
-  const [form, setForm] = useState({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, logo: "", premiumActive: false, premiumStart: "", premiumEnd: "" });
+  const [form, setForm] = useState({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, logo: "", location: "", premiumActive: false, premiumStart: "", premiumEnd: "" });
 
-  const openNew = () => { setEditSupplier(null); setForm({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, logo: "", premiumActive: false, premiumStart: "", premiumEnd: "" }); setDialogOpen(true); };
-  const openEdit = (s: Supplier) => { setEditSupplier(s); setForm({ name: s.name, description: s.description, contactEmail: s.contactEmail, contactPhone: s.contactPhone, rating: String(s.rating), verified: s.verified, logo: s.logo || "", premiumActive: s.premium?.active || false, premiumStart: s.premium?.startDate || "", premiumEnd: s.premium?.endDate || "" }); setDialogOpen(true); };
+  const openNew = () => { setEditSupplier(null); setForm({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, logo: "", location: "", premiumActive: false, premiumStart: "", premiumEnd: "" }); setDialogOpen(true); };
+  const openEdit = (s: Supplier) => { setEditSupplier(s); setForm({ name: s.name, description: s.description, contactEmail: s.contactEmail, contactPhone: s.contactPhone, rating: String(s.rating), verified: s.verified, logo: s.logo || "", location: s.location || "", premiumActive: s.premium?.active || false, premiumStart: s.premium?.startDate || "", premiumEnd: s.premium?.endDate || "" }); setDialogOpen(true); };
 
   const handleSave = () => {
     if (!form.name || !form.contactEmail) { toast.error("Preencha os campos obrigatórios"); return; }
     const data: Supplier = {
       id: editSupplier?.id || `sup-${Date.now()}`, name: form.name, description: form.description,
-      logo: form.logo || undefined,
+      logo: form.logo || undefined, location: form.location || "Maputo",
       contactEmail: form.contactEmail, contactPhone: form.contactPhone,
       rating: Number(form.rating), verified: form.verified,
       premium: form.premiumActive ? { active: true, startDate: form.premiumStart, endDate: form.premiumEnd, adDiscount: premiumSettings.adDiscount, prioritySlots: premiumSettings.prioritySlots } : undefined,
@@ -284,6 +284,7 @@ const SuppliersTab = () => {
               <div><Label>Nome *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl" /></div>
               <div><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="rounded-xl" /></div>
               <div><Label>URL do Logo</Label><Input value={form.logo} onChange={(e) => setForm({ ...form, logo: e.target.value })} placeholder="https://..." className="rounded-xl" /></div>
+              <div><Label>Localização</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Ex: Maputo, Beira, Nampula..." className="rounded-xl" /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>Email *</Label><Input type="email" value={form.contactEmail} onChange={(e) => setForm({ ...form, contactEmail: e.target.value })} className="rounded-xl" /></div>
                 <div><Label>Telefone</Label><Input value={form.contactPhone} onChange={(e) => setForm({ ...form, contactPhone: e.target.value })} className="rounded-xl" /></div>
