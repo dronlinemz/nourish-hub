@@ -453,7 +453,11 @@ const SuppliersTab = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-1.5"><h3 className="font-display font-bold text-sm">{s.name}</h3>{s.verified && <BadgeCheck className="w-4 h-4 text-primary" />}</div>
-                      <div className="flex items-center gap-1 mt-0.5"><Star className="w-3 h-3 text-accent fill-accent" /><span className="text-xs font-medium">{s.rating}</span><span className="text-xs text-muted-foreground">• {productCount} produtos</span></div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <div className="flex items-center gap-1"><Star className="w-3 h-3 text-accent fill-accent" /><span className="text-xs font-medium">{s.rating}</span></div>
+                        <span className="text-xs text-muted-foreground">• {productCount} produtos</span>
+                        {s.location && <span className="text-xs text-muted-foreground flex items-center gap-0.5">• <MapPin className="w-3 h-3" />{s.location}</span>}
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-0.5">
