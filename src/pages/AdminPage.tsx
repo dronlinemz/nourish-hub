@@ -252,8 +252,8 @@ const SuppliersTab = () => {
   const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
   const [form, setForm] = useState({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, logo: "", location: "", premiumActive: false, premiumStart: "", premiumEnd: "" });
 
-  const openNew = () => { setEditSupplier(null); setForm({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, logo: "", premiumActive: false, premiumStart: "", premiumEnd: "" }); setDialogOpen(true); };
-  const openEdit = (s: Supplier) => { setEditSupplier(s); setForm({ name: s.name, description: s.description, contactEmail: s.contactEmail, contactPhone: s.contactPhone, rating: String(s.rating), verified: s.verified, logo: s.logo || "", premiumActive: s.premium?.active || false, premiumStart: s.premium?.startDate || "", premiumEnd: s.premium?.endDate || "" }); setDialogOpen(true); };
+  const openNew = () => { setEditSupplier(null); setForm({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, logo: "", location: "", premiumActive: false, premiumStart: "", premiumEnd: "" }); setDialogOpen(true); };
+  const openEdit = (s: Supplier) => { setEditSupplier(s); setForm({ name: s.name, description: s.description, contactEmail: s.contactEmail, contactPhone: s.contactPhone, rating: String(s.rating), verified: s.verified, logo: s.logo || "", location: s.location || "", premiumActive: s.premium?.active || false, premiumStart: s.premium?.startDate || "", premiumEnd: s.premium?.endDate || "" }); setDialogOpen(true); };
 
   const handleSave = () => {
     if (!form.name || !form.contactEmail) { toast.error("Preencha os campos obrigatórios"); return; }
