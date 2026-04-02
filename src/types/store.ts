@@ -11,6 +11,7 @@ export interface Supplier {
   name: string;
   logo?: string;
   description: string;
+  location: string;
   rating: number;
   verified: boolean;
   contactEmail: string;
