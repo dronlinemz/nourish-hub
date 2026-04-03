@@ -174,6 +174,8 @@ const ProductsTab = () => {
   const [filterCategory, setFilterCategory] = useState<Category | "all">("all");
   const [filterSupplier, setFilterSupplier] = useState<string>("all");
   const [filterStock, setFilterStock] = useState<"all" | "in-stock" | "low" | "out">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   const [form, setForm] = useState({ name: "", description: "", price: "", originalPrice: "", image: "", category: "" as Category | "", supplierId: "", stock: "", featured: false });
 
   const filtered = useMemo(() => {
