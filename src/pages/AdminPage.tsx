@@ -190,6 +190,12 @@ const ProductsTab = () => {
     });
   }, [products, searchQuery, filterCategory, filterSupplier, filterStock]);
 
+  // Reset page when filters change
+  React.useEffect(() => { setCurrentPage(1); }, [searchQuery, filterCategory, filterSupplier, filterStock]);
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedProducts = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
   const statsInStock = products.filter((p) => p.stock >= 10).length;
   const statsLowStock = products.filter((p) => p.stock > 0 && p.stock < 10).length;
   const statsOutOfStock = products.filter((p) => p.stock === 0).length;
