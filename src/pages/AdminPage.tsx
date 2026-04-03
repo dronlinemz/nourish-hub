@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   LayoutDashboard, Package, Users, ShoppingBag, ArrowLeft, Plus, Pencil, Trash2,
@@ -174,6 +174,8 @@ const ProductsTab = () => {
   const [filterCategory, setFilterCategory] = useState<Category | "all">("all");
   const [filterSupplier, setFilterSupplier] = useState<string>("all");
   const [filterStock, setFilterStock] = useState<"all" | "in-stock" | "low" | "out">("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   const [form, setForm] = useState({ name: "", description: "", price: "", originalPrice: "", image: "", category: "" as Category | "", supplierId: "", stock: "", featured: false });
 
   const filtered = useMemo(() => {
@@ -187,6 +189,12 @@ const ProductsTab = () => {
       return true;
     });
   }, [products, searchQuery, filterCategory, filterSupplier, filterStock]);
+
+  // Reset page when filters change
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, filterCategory, filterSupplier, filterStock]);
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedProducts = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const statsInStock = products.filter((p) => p.stock >= 10).length;
   const statsLowStock = products.filter((p) => p.stock > 0 && p.stock < 10).length;
@@ -316,7 +324,7 @@ const ProductsTab = () => {
             <span className="text-center">Acções</span>
           </div>
           <div className="divide-y divide-border">
-            {filtered.map((p) => {
+            {paginatedProducts.map((p) => {
               const supplier = suppliers.find((s) => s.id === p.supplierId);
               return (
                 <div key={p.id} className={`grid grid-cols-[48px_1fr_auto] lg:grid-cols-[48px_1fr_140px_140px_90px_100px_90px] gap-3 items-center px-5 py-3.5 hover:bg-muted/30 transition-colors ${p.stock === 0 ? "opacity-60" : ""}`}>
@@ -351,6 +359,28 @@ const ProductsTab = () => {
             })}
           </div>
         </Card>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-xs text-muted-foreground">
+            {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} de {filtered.length} produtos
+          </p>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" className="h-8 rounded-lg" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}>
+              Anterior
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button key={page} variant={page === currentPage ? "default" : "outline"} size="sm" className="h-8 w-8 rounded-lg p-0" onClick={() => setCurrentPage(page)}>
+                {page}
+              </Button>
+            ))}
+            <Button variant="outline" size="sm" className="h-8 rounded-lg" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)}>
+              Seguinte
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
