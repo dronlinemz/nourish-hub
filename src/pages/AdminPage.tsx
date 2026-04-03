@@ -669,13 +669,33 @@ const OrdersTab = () => {
 
 /* ─── Ads ─── */
 const AdsTab = () => {
-  const { adCampaigns, setAdCampaigns } = useStore();
+  const { adCampaigns, setAdCampaigns, suppliers } = useStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editAd, setEditAd] = useState<AdCampaign | null>(null);
   const [filterSpace, setFilterSpace] = useState<AdSpace | "all">("all");
+  const [filterStatus, setFilterStatus] = useState<AdStatus | "all">("all");
+  const [filterPartner, setFilterPartner] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ADS_PER_PAGE = 8;
   const [form, setForm] = useState({ partner: "", title: "", description: "", cta: "", url: "", image: "", space: "" as AdSpace | "", status: "active" as AdStatus, startDate: "", endDate: "", expectedRevenue: "", realizedRevenue: "" });
 
-  const filtered = adCampaigns.filter((a) => filterSpace === "all" || a.space === filterSpace);
+  const partners = useMemo(() => [...new Set(adCampaigns.map((a) => a.partner))].sort(), [adCampaigns]);
+
+  const filtered = useMemo(() => {
+    return adCampaigns.filter((a) => {
+      if (filterSpace !== "all" && a.space !== filterSpace) return false;
+      if (filterStatus !== "all" && a.status !== filterStatus) return false;
+      if (filterPartner !== "all" && a.partner !== filterPartner) return false;
+      if (searchQuery && !a.title.toLowerCase().includes(searchQuery.toLowerCase()) && !a.partner.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      return true;
+    });
+  }, [adCampaigns, filterSpace, filterStatus, filterPartner, searchQuery]);
+
+  useEffect(() => { setCurrentPage(1); }, [filterSpace, filterStatus, filterPartner, searchQuery]);
+
+  const totalPages = Math.ceil(filtered.length / ADS_PER_PAGE);
+  const paginatedAds = filtered.slice((currentPage - 1) * ADS_PER_PAGE, currentPage * ADS_PER_PAGE);
 
   const spaceStats = (Object.keys(AD_SPACE_LABELS) as AdSpace[]).map((space) => {
     const ads = adCampaigns.filter((a) => a.space === space);
@@ -689,6 +709,10 @@ const AdsTab = () => {
   const totalRealized = adCampaigns.reduce((s, a) => s + a.realizedRevenue, 0);
   const totalImpressions = adCampaigns.reduce((s, a) => s + a.impressions, 0);
   const totalClicks = adCampaigns.reduce((s, a) => s + a.clicks, 0);
+  const globalCTR = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(1) : "0.0";
+
+  const activeCount = adCampaigns.filter((a) => a.status === "active").length;
+  const pausedCount = adCampaigns.filter((a) => a.status === "paused").length;
 
   const openNew = () => { setEditAd(null); setForm({ partner: "", title: "", description: "", cta: "", url: "", image: "", space: "", status: "active", startDate: "", endDate: "", expectedRevenue: "", realizedRevenue: "" }); setDialogOpen(true); };
   const openEdit = (ad: AdCampaign) => { setEditAd(ad); setForm({ partner: ad.partner, title: ad.title, description: ad.description, cta: ad.cta, url: ad.url, image: ad.image, space: ad.space, status: ad.status, startDate: ad.startDate, endDate: ad.endDate, expectedRevenue: String(ad.expectedRevenue), realizedRevenue: String(ad.realizedRevenue) }); setDialogOpen(true); };
@@ -705,8 +729,11 @@ const AdsTab = () => {
   const toggleStatus = (ad: AdCampaign) => { const ns: AdStatus = ad.status === "active" ? "paused" : "active"; setAdCampaigns((prev) => prev.map((a) => (a.id === ad.id ? { ...a, status: ns } : a))); toast.success(`Campanha ${ns === "active" ? "activada" : "pausada"}`); };
   const statusBadgeVariant = (status: AdStatus): "default" | "secondary" | "destructive" | "outline" => { switch (status) { case "active": return "default"; case "paused": return "secondary"; case "ended": return "destructive"; default: return "outline"; } };
 
+  const hasFilters = searchQuery || filterSpace !== "all" || filterStatus !== "all" || filterPartner !== "all";
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div><h1 className="text-2xl md:text-3xl font-display font-bold">Gestão de Publicidade</h1><p className="text-sm text-muted-foreground">Gerir espaços, campanhas e receitas</p></div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -742,17 +769,27 @@ const AdsTab = () => {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI strip */}
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
         {[
-          { label: "Receita Prevista", value: formatPrice(totalExpected), icon: <DollarSign className="w-5 h-5" />, color: "text-primary", bg: "bg-primary/10" },
-          { label: "Receita Realizada", value: formatPrice(totalRealized), icon: <TrendingUp className="w-5 h-5" />, color: "text-accent", bg: "bg-accent/10" },
-          { label: "Impressões", value: totalImpressions.toLocaleString("pt-MZ"), icon: <Eye className="w-5 h-5" />, color: "text-secondary", bg: "bg-secondary/10" },
-          { label: "Cliques", value: totalClicks.toLocaleString("pt-MZ"), icon: <MousePointerClick className="w-5 h-5" />, color: "text-primary", bg: "bg-primary/10" },
+          { label: "Campanhas", value: String(adCampaigns.length), icon: <Megaphone className="w-4 h-4" />, color: "text-primary", bg: "bg-primary/10" },
+          { label: "Activas", value: String(activeCount), icon: <Play className="w-4 h-4" />, color: "text-primary", bg: "bg-primary/10" },
+          { label: "Receita Prevista", value: formatPrice(totalExpected), icon: <DollarSign className="w-4 h-4" />, color: "text-muted-foreground", bg: "bg-muted" },
+          { label: "Receita Realizada", value: formatPrice(totalRealized), icon: <TrendingUp className="w-4 h-4" />, color: "text-primary", bg: "bg-primary/10" },
+          { label: "Impressões", value: totalImpressions.toLocaleString("pt-MZ"), icon: <Eye className="w-4 h-4" />, color: "text-muted-foreground", bg: "bg-muted" },
+          { label: "CTR", value: `${globalCTR}%`, icon: <MousePointerClick className="w-4 h-4" />, color: "text-primary", bg: "bg-primary/10" },
         ].map((s) => (
-          <Card key={s.label}><CardContent className="p-5"><div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center ${s.color} mb-3`}>{s.icon}</div><p className="text-2xl font-display font-bold">{s.value}</p><p className="text-xs text-muted-foreground mt-0.5">{s.label}</p></CardContent></Card>
+          <Card key={s.label} className="border-border">
+            <CardContent className="p-4">
+              <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center ${s.color} mb-2`}>{s.icon}</div>
+              <p className="text-lg font-display font-bold">{s.value}</p>
+              <p className="text-[10px] text-muted-foreground">{s.label}</p>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
+      {/* Revenue by space */}
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-lg flex items-center gap-2"><Monitor className="w-5 h-5 text-primary" /> Receitas por Espaço</CardTitle></CardHeader>
         <CardContent>
@@ -778,39 +815,97 @@ const AdsTab = () => {
         </CardContent>
       </Card>
 
-      {filterSpace !== "all" && (
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">Filtro: {AD_SPACE_LABELS[filterSpace]}</Badge>
-          <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={() => setFilterSpace("all")}>Limpar</Button>
+      {/* Filters bar */}
+      <Card className="p-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input placeholder="Pesquisar por título ou parceiro..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 rounded-xl" />
+          </div>
+          <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as AdStatus | "all")}>
+            <SelectTrigger className="rounded-xl sm:w-[150px]"><SelectValue placeholder="Estado" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos estados</SelectItem>
+              {(Object.entries(AD_STATUS_LABELS) as [AdStatus, string][]).map(([k, v]) => (<SelectItem key={k} value={k}>{v}</SelectItem>))}
+            </SelectContent>
+          </Select>
+          <Select value={filterPartner} onValueChange={setFilterPartner}>
+            <SelectTrigger className="rounded-xl sm:w-[180px]"><SelectValue placeholder="Parceiro" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos parceiros</SelectItem>
+              {partners.map((p) => (<SelectItem key={p} value={p}>{p}</SelectItem>))}
+            </SelectContent>
+          </Select>
         </div>
-      )}
+        {hasFilters && (
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
+            {filterSpace !== "all" && <Badge variant="outline" className="text-xs gap-1"><Monitor className="w-3 h-3" /> {AD_SPACE_LABELS[filterSpace]} <button className="ml-1 hover:text-destructive" onClick={() => setFilterSpace("all")}>×</button></Badge>}
+            {filterStatus !== "all" && <Badge variant="outline" className="text-xs gap-1">{AD_STATUS_LABELS[filterStatus]} <button className="ml-1 hover:text-destructive" onClick={() => setFilterStatus("all")}>×</button></Badge>}
+            {filterPartner !== "all" && <Badge variant="outline" className="text-xs gap-1">{filterPartner} <button className="ml-1 hover:text-destructive" onClick={() => setFilterPartner("all")}>×</button></Badge>}
+            {searchQuery && <Badge variant="outline" className="text-xs gap-1">"{searchQuery}" <button className="ml-1 hover:text-destructive" onClick={() => setSearchQuery("")}>×</button></Badge>}
+            <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={() => { setFilterSpace("all"); setFilterStatus("all"); setFilterPartner("all"); setSearchQuery(""); }}>Limpar tudo</Button>
+          </div>
+        )}
+      </Card>
 
+      {/* Campaigns table */}
       <Card className="overflow-hidden">
-        <div className="hidden sm:grid grid-cols-[1fr_140px_100px_100px_100px_80px] gap-4 items-center px-5 py-3 bg-muted/50 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          <span>Campanha</span><span>Espaço</span><span>Estado</span><span className="text-right">Prevista</span><span className="text-right">Realizada</span><span className="text-center">Acções</span>
+        <div className="hidden sm:grid grid-cols-[1fr_130px_90px_90px_80px_70px_80px] gap-3 items-center px-5 py-3 bg-muted/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border">
+          <span>Campanha</span><span>Espaço</span><span>Estado</span><span className="text-right">Receita</span><span className="text-right">Impr.</span><span className="text-right">CTR</span><span className="text-center">Acções</span>
         </div>
         <div className="divide-y divide-border">
-          {filtered.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground"><Megaphone className="w-10 h-10 mx-auto mb-3 opacity-30" /><p className="text-sm">Nenhuma campanha {filterSpace !== "all" ? "neste espaço" : "registada"}</p></div>
-          ) : filtered.map((ad) => (
-            <div key={ad.id} className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_140px_100px_100px_100px_80px] gap-4 items-center px-5 py-4 hover:bg-muted/30 transition-colors">
-              <div className="flex items-center gap-3 min-w-0">
-                <img src={ad.image} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
-                <div className="min-w-0"><p className="font-display font-semibold text-sm truncate">{ad.title}</p><p className="text-xs text-muted-foreground truncate">{ad.partner} • {ad.startDate} → {ad.endDate || "∞"}</p></div>
+          {paginatedAds.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground"><Megaphone className="w-10 h-10 mx-auto mb-3 opacity-30" /><p className="text-sm">Nenhuma campanha encontrada</p>{hasFilters && <p className="text-xs mt-1">Ajuste os filtros para ver resultados</p>}</div>
+          ) : paginatedAds.map((ad) => {
+            const ctr = ad.impressions > 0 ? ((ad.clicks / ad.impressions) * 100).toFixed(1) : "0.0";
+            const revPct = ad.expectedRevenue > 0 ? Math.round((ad.realizedRevenue / ad.expectedRevenue) * 100) : 0;
+            return (
+              <div key={ad.id} className={`grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_130px_90px_90px_80px_70px_80px] gap-3 items-center px-5 py-3.5 hover:bg-muted/30 transition-colors ${ad.status === "paused" ? "opacity-70" : ""}`}>
+                <div className="flex items-center gap-3 min-w-0">
+                  <img src={ad.image} alt="" className="w-11 h-11 rounded-lg object-cover flex-shrink-0 border border-border" />
+                  <div className="min-w-0">
+                    <p className="font-display font-semibold text-sm truncate">{ad.title}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{ad.partner} • {ad.startDate} → {ad.endDate || "∞"}</p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="hidden sm:inline-flex text-[10px] w-fit">{AD_SPACE_LABELS[ad.space]}</Badge>
+                <div className="hidden sm:block"><Badge variant={statusBadgeVariant(ad.status)} className="text-[10px]">{AD_STATUS_LABELS[ad.status]}</Badge></div>
+                <div className="hidden sm:block text-right">
+                  <span className="text-sm font-display font-bold">{formatPrice(ad.realizedRevenue)}</span>
+                  {ad.expectedRevenue > 0 && (
+                    <div className="mt-0.5">
+                      <div className="h-1 bg-muted rounded-full overflow-hidden w-16 ml-auto"><div className={`h-full rounded-full ${revPct >= 70 ? "bg-primary" : revPct >= 40 ? "bg-accent" : "bg-destructive"}`} style={{ width: `${Math.min(revPct, 100)}%` }} /></div>
+                    </div>
+                  )}
+                </div>
+                <span className="hidden sm:block text-xs text-right text-muted-foreground">{ad.impressions.toLocaleString("pt-MZ")}</span>
+                <span className={`hidden sm:block text-xs text-right font-medium ${Number(ctr) >= 3 ? "text-primary" : Number(ctr) >= 1 ? "text-foreground" : "text-muted-foreground"}`}>{ctr}%</span>
+                <div className="flex gap-0.5 justify-end sm:justify-center">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" title={ad.status === "active" ? "Pausar" : "Activar"} onClick={() => toggleStatus(ad)}>{ad.status === "active" ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}</Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => openEdit(ad)}><Pencil className="w-3.5 h-3.5" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => handleDelete(ad.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                </div>
               </div>
-              <Badge variant="outline" className="hidden sm:inline-flex text-[10px] w-fit">{AD_SPACE_LABELS[ad.space]}</Badge>
-              <Badge variant={statusBadgeVariant(ad.status)} className="hidden sm:inline-flex text-[10px] w-fit">{AD_STATUS_LABELS[ad.status]}</Badge>
-              <span className="hidden sm:block text-sm text-right">{formatPrice(ad.expectedRevenue)}</span>
-              <span className="hidden sm:block text-sm font-bold text-right">{formatPrice(ad.realizedRevenue)}</span>
-              <div className="flex gap-0.5 justify-end sm:justify-center">
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => toggleStatus(ad)}>{ad.status === "active" ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}</Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => openEdit(ad)}><Pencil className="w-3.5 h-3.5" /></Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => handleDelete(ad.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            {(currentPage - 1) * ADS_PER_PAGE + 1}–{Math.min(currentPage * ADS_PER_PAGE, filtered.length)} de {filtered.length} campanhas
+          </p>
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" className="h-8 rounded-lg" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}>Anterior</Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button key={page} variant={page === currentPage ? "default" : "outline"} size="sm" className="h-8 w-8 rounded-lg p-0" onClick={() => setCurrentPage(page)}>{page}</Button>
+            ))}
+            <Button variant="outline" size="sm" className="h-8 rounded-lg" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => p + 1)}>Seguinte</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
