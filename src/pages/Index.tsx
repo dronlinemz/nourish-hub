@@ -121,7 +121,7 @@ const Index = () => {
               className="absolute inset-0 w-full h-full object-cover"
             />
             {/* Overlay gradient */}
-            <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/50 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-secondary/85 via-secondary/60 to-transparent" />
           </div>
         ))}
 
@@ -139,8 +139,8 @@ const Index = () => {
                   pointerEvents: currentSlide === i ? "auto" : "none",
                 }}
               >
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white/90 text-xs font-medium mb-4">
-                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/20 backdrop-blur-sm text-white/90 text-xs font-medium mb-4">
+                  <Sparkles className="w-3.5 h-3.5 text-white" />
                   {slide.badge}
                 </div>
                 <h1 className="text-3xl md:text-5xl font-display font-extrabold text-white mb-3 leading-[1.15] text-balance">
@@ -152,14 +152,18 @@ const Index = () => {
                 </p>
               </div>
             ))}
-            <div className="relative max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Pesquisar produtos..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-11 h-12 bg-card/95 backdrop-blur-sm text-card-foreground border-0 rounded-xl shadow-lg shadow-foreground/5 text-sm placeholder:text-muted-foreground/70"
-              />
+            <div className="relative max-w-md bg-primary rounded-xl p-1">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Pesquisar produtos..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10 h-10 bg-card text-card-foreground border-0 rounded-lg text-sm placeholder:text-muted-foreground/70"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
