@@ -139,8 +139,8 @@ const Index = () => {
                   pointerEvents: currentSlide === i ? "auto" : "none",
                 }}
               >
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-sm text-white/90 text-xs font-medium mb-4">
-                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/20 backdrop-blur-sm text-white/90 text-xs font-medium mb-4">
+                  <Sparkles className="w-3.5 h-3.5 text-white" />
                   {slide.badge}
                 </div>
                 <h1 className="text-3xl md:text-5xl font-display font-extrabold text-white mb-3 leading-[1.15] text-balance">
