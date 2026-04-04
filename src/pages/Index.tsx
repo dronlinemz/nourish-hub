@@ -152,14 +152,18 @@ const Index = () => {
                 </p>
               </div>
             ))}
-            <div className="relative max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Pesquisar produtos..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-11 h-12 bg-card/95 backdrop-blur-sm text-card-foreground border-0 rounded-xl shadow-lg shadow-foreground/5 text-sm placeholder:text-muted-foreground/70"
-              />
+            <div className="relative max-w-md bg-primary rounded-xl p-1">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Pesquisar produtos..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10 h-10 bg-card text-card-foreground border-0 rounded-lg text-sm placeholder:text-muted-foreground/70"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
