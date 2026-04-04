@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { Search, TrendingUp, ArrowRight, Sparkles, ChevronLeft, ChevronRight, Shield, Truck, CreditCard, X } from "lucide-react";
+import { Search, TrendingUp, Sparkles, ChevronLeft, ChevronRight, Shield, Truck, CreditCard, X, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
@@ -46,6 +46,12 @@ const HERO_SLIDES = [
   },
 ];
 
+const TRUST_ITEMS = [
+  { icon: <Shield className="w-5 h-5" />, title: "Produtos Verificados", desc: "Fornecedores certificados" },
+  { icon: <Truck className="w-5 h-5" />, title: "Entrega Nacional", desc: "Em todo Moçambique" },
+  { icon: <CreditCard className="w-5 h-5" />, title: "Pagamento Seguro", desc: "M-Pesa & Transferência" },
+];
+
 const Index = () => {
   const { products, adCampaigns, suppliers } = useStore();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -70,16 +76,14 @@ const Index = () => {
     return () => clearInterval(timer);
   }, [nextSlide]);
 
-  // Featured products: controlled by "featured" ad space campaigns
   const featuredProductIds = useMemo(() => {
     return adCampaigns
       .filter((a) => a.space === "featured" && a.status === "active")
-      .map((a) => a.url) // url stores the product ID for featured ads
+      .map((a) => a.url)
       .filter(Boolean);
   }, [adCampaigns]);
 
   const featuredProducts = useMemo(() => {
-    // If there are featured ad campaigns, use those; otherwise fall back to product.featured flag
     if (featuredProductIds.length > 0) {
       return products.filter((p) => featuredProductIds.includes(p.id));
     }
@@ -103,8 +107,7 @@ const Index = () => {
       <StoreHeader />
 
       {/* Hero Carousel */}
-      <section className="relative overflow-hidden h-[340px] md:h-[420px]">
-        {/* Slides */}
+      <section className="relative overflow-hidden h-[360px] md:h-[440px]">
         {HERO_SLIDES.map((slide, i) => (
           <div
             key={slide.id}
@@ -114,18 +117,11 @@ const Index = () => {
               transform: currentSlide === i ? "scale(1)" : "scale(1.05)",
             }}
           >
-            {/* Background image */}
-            <img
-              src={slide.bg}
-              alt=""
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            {/* Overlay gradient */}
-            <div className="absolute inset-0 bg-gradient-to-r from-secondary/85 via-secondary/60 to-transparent" />
+            <img src={slide.bg} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-r from-secondary/90 via-secondary/55 to-secondary/10" />
           </div>
         ))}
 
-        {/* Content */}
         <div className="container relative h-full flex items-center z-10">
           <div className="max-w-xl">
             {HERO_SLIDES.map((slide, i) => (
@@ -139,28 +135,30 @@ const Index = () => {
                   pointerEvents: currentSlide === i ? "auto" : "none",
                 }}
               >
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/20 backdrop-blur-sm text-white/90 text-xs font-medium mb-4">
-                  <Sparkles className="w-3.5 h-3.5 text-white" />
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-white/90 text-xs font-medium mb-4 border border-white/10">
+                  <Sparkles className="w-3.5 h-3.5" />
                   {slide.badge}
                 </div>
                 <h1 className="text-3xl md:text-5xl font-display font-extrabold text-white mb-3 leading-[1.15] text-balance">
                   {slide.title}{" "}
-                  <span className="text-primary">{slide.highlight}</span>
+                  <span className="text-primary-foreground/80 drop-shadow-sm">{slide.highlight}</span>
                 </h1>
-                <p className="text-white/70 text-sm md:text-base mb-6 max-w-lg leading-relaxed">
+                <p className="text-white/65 text-sm md:text-base mb-6 max-w-lg leading-relaxed">
                   {slide.subtitle}
                 </p>
               </div>
             ))}
-            <div className="relative max-w-md bg-primary rounded-xl p-1">
-              <div className="flex items-center gap-2">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+
+            {/* Search bar - DrOnline "ENCONTRE" style */}
+            <div className="max-w-md">
+              <div className="bg-primary rounded-xl p-1 shadow-lg shadow-primary/20">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
                   <Input
-                    placeholder="Pesquisar produtos..."
+                    placeholder="Pesquisar produtos, categorias..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10 h-10 bg-card text-card-foreground border-0 rounded-lg text-sm placeholder:text-muted-foreground/70"
+                    className="pl-10 h-11 bg-card text-card-foreground border-0 rounded-lg text-sm placeholder:text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-primary/30"
                   />
                 </div>
               </div>
@@ -171,48 +169,47 @@ const Index = () => {
         {/* Nav arrows */}
         <button
           onClick={prevSlide}
-          className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/25 transition-colors"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-all duration-200 border border-white/10"
+          aria-label="Slide anterior"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
         <button
           onClick={nextSlide}
-          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/25 transition-colors"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-all duration-200 border border-white/10"
+          aria-label="Próximo slide"
         >
           <ChevronRight className="w-5 h-5" />
         </button>
 
         {/* Dots */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-2">
           {HERO_SLIDES.map((_, i) => (
             <button
               key={i}
               onClick={() => goToSlide(i)}
+              aria-label={`Slide ${i + 1}`}
               className={`h-2 rounded-full transition-all duration-300 ${
                 currentSlide === i
-                  ? "w-6 bg-primary"
-                  : "w-2 bg-white/40 hover:bg-white/60"
+                  ? "w-7 bg-white"
+                  : "w-2 bg-white/30 hover:bg-white/50"
               }`}
             />
           ))}
         </div>
       </section>
 
-      {/* Trust Strip - moved to top */}
+      {/* Trust Strip */}
       <section className="border-b border-border bg-card">
-        <div className="container py-5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { icon: <Shield className="w-5 h-5 text-primary" />, title: "Produtos Verificados", desc: "Fornecedores certificados" },
-              { icon: <Truck className="w-5 h-5 text-primary" />, title: "Entrega Nacional", desc: "Em todo Moçambique" },
-              { icon: <CreditCard className="w-5 h-5 text-primary" />, title: "Pagamento Seguro", desc: "M-Pesa & Transferência" },
-            ].map((item) => (
-              <div key={item.title} className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+        <div className="container py-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
+            {TRUST_ITEMS.map((item, idx) => (
+              <div key={item.title} className={`flex items-center gap-3 py-1 ${idx > 0 ? "sm:border-l sm:border-border sm:pl-6" : ""}`}>
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary">
                   {item.icon}
                 </div>
                 <div>
-                  <p className="text-sm font-display font-semibold">{item.title}</p>
+                  <p className="text-sm font-display font-semibold leading-tight">{item.title}</p>
                   <p className="text-xs text-muted-foreground">{item.desc}</p>
                 </div>
               </div>
@@ -221,22 +218,25 @@ const Index = () => {
         </div>
       </section>
 
-      <main className="container flex-1 py-10">
+      <main className="container flex-1 py-8 md:py-10">
         {/* Partner Ad Banner */}
-        <PartnerBanner variant="wide" className="mb-10" />
+        <PartnerBanner variant="wide" className="mb-8" />
 
         {/* Featured */}
         {!search && !selectedCategory && featuredProducts.length > 0 && (
-          <section className="mb-14 animate-fade-in">
-            <div className="flex items-center justify-between mb-5">
+          <section className="mb-12 animate-fade-in">
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-primary" />
+                  <Star className="w-4 h-4 text-primary" />
                 </div>
-                <h2 className="text-xl font-display font-bold">Destaques</h2>
+                <div>
+                  <h2 className="text-lg md:text-xl font-display font-bold leading-tight">Destaques</h2>
+                  <p className="text-xs text-muted-foreground">Produtos em destaque no marketplace</p>
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               {featuredProducts.slice(0, 4).map((p, i) => (
                 <div key={p.id} className="animate-fade-in" style={{ animationDelay: `${i * 80}ms` }}>
                   <ProductCard product={p} />
@@ -246,13 +246,13 @@ const Index = () => {
           </section>
         )}
 
-        {/* Divider between sections */}
-        <div className="relative mb-10">
+        {/* Divider */}
+        <div className="relative mb-8">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center">
-            <span className="bg-background px-4 text-sm font-display font-semibold text-muted-foreground">
+            <span className="bg-background px-5 text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider">
               Explorar Catálogo
             </span>
           </div>
@@ -260,15 +260,15 @@ const Index = () => {
 
         {/* Supplier filter banner */}
         {activeSupplier && (
-          <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-primary/5 border border-primary/20">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center font-display font-bold text-primary overflow-hidden flex-shrink-0">
+          <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-primary/5 border border-primary/15">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-display font-bold text-primary overflow-hidden flex-shrink-0">
               {activeSupplier.logo ? <img src={activeSupplier.logo} alt={activeSupplier.name} className="w-full h-full object-cover" /> : activeSupplier.name.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-display font-semibold truncate">Produtos de {activeSupplier.name}</p>
               <p className="text-xs text-muted-foreground">{filteredProducts.length} {filteredProducts.length === 1 ? "produto" : "produtos"} disponíveis</p>
             </div>
-            <Button variant="ghost" size="icon" className="flex-shrink-0" onClick={clearSupplierFilter}>
+            <Button variant="ghost" size="icon" className="flex-shrink-0 hover:bg-destructive/10 hover:text-destructive" onClick={clearSupplierFilter}>
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -277,30 +277,30 @@ const Index = () => {
         {/* Categories & Products */}
         <section className="animate-fade-in">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-display font-bold">
+            <h2 className="text-lg md:text-xl font-display font-bold">
               {activeSupplier ? `Produtos de ${activeSupplier.name}` : selectedCategory ? "Categoria" : "Todos os Produtos"}
             </h2>
-            <span className="text-sm text-muted-foreground">
+            <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
               {filteredProducts.length} {filteredProducts.length === 1 ? "produto" : "produtos"}
             </span>
           </div>
-          
+
           <div className="mb-6">
             <CategoryFilter selected={selectedCategory} onChange={setSelectedCategory} />
           </div>
 
           {filteredProducts.length === 0 ? (
             <div className="text-center py-20 text-muted-foreground">
-              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-                <Search className="w-7 h-7 text-muted-foreground/50" />
+              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                <Search className="w-7 h-7 text-muted-foreground/40" />
               </div>
-              <p className="text-lg font-display font-semibold mb-1">Nenhum produto encontrado</p>
+              <p className="text-base font-display font-semibold mb-1">Nenhum produto encontrado</p>
               <p className="text-sm">Tente ajustar os filtros ou a pesquisa</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
               {filteredProducts.map((p, i) => (
-                <div key={p.id} className="animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
+                <div key={p.id} className="animate-fade-in" style={{ animationDelay: `${i * 40}ms` }}>
                   <ProductCard product={p} />
                 </div>
               ))}
