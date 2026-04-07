@@ -6,6 +6,7 @@ import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
 import ProductCard from "@/components/ProductCard";
 import PartnerBanner from "@/components/PartnerBanner";
+import ProductReviews from "@/components/ProductReviews";
 import { useStore } from "@/contexts/StoreContext";
 import { useCart } from "@/contexts/CartContext";
 import { CATEGORY_LABELS } from "@/types/store";
@@ -255,6 +256,9 @@ const ProductDetail = () => {
             )}
           </div>
         </div>
+
+        {/* Reviews */}
+        <ProductReviews productId={product.id} />
 
         {/* Partner Ad */}
         <PartnerBanner variant="wide" className="mt-12" />
