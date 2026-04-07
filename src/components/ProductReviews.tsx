@@ -128,7 +128,7 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
         <Card className="p-6 border-border bg-card rounded-xl text-center">
           <p className="text-4xl font-display font-bold text-foreground mb-1">{avgRating.toFixed(1)}</p>
           <StarRating rating={Math.round(avgRating)} size="md" />
-          <p className="text-xs text-muted-foreground mt-2">{reviews.length} avaliações</p>
+          <p className="text-xs text-muted-foreground mt-2">{allReviews.length} avaliações</p>
         </Card>
 
         <div className="flex flex-col justify-center gap-2">
@@ -191,7 +191,7 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
             onClick={() => setShowAll(!showAll)}
             className="rounded-xl border-border"
           >
-            {showAll ? "Mostrar menos" : `Ver todas as ${reviews.length} avaliações`}
+            {showAll ? "Mostrar menos" : `Ver todas as ${allReviews.length} avaliações`}
           </Button>
         </div>
       )}
