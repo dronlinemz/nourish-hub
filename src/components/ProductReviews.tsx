@@ -63,16 +63,51 @@ const StarRating = ({ rating, size = "sm" }: { rating: number; size?: "sm" | "md
 );
 
 const ProductReviews = ({ productId }: ProductReviewsProps) => {
-  const reviews = generateReviews(productId);
+  const [allReviews, setAllReviews] = useState<Review[]>(() => generateReviews(productId));
   const [helpfulClicked, setHelpfulClicked] = useState<Record<string, boolean>>({});
   const [showAll, setShowAll] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [formName, setFormName] = useState("");
+  const [formRating, setFormRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [formComment, setFormComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+  const avgRating = allReviews.length ? allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length : 0;
   const ratingCounts = [5, 4, 3, 2, 1].map(
-    (star) => ({ star, count: reviews.filter((r) => r.rating === star).length })
+    (star) => ({ star, count: allReviews.filter((r) => r.rating === star).length })
   );
 
-  const displayed = showAll ? reviews : reviews.slice(0, 3);
+  const displayed = showAll ? allReviews : allReviews.slice(0, 3);
+
+  const handleSubmitReview = () => {
+    const name = formName.trim();
+    const comment = formComment.trim();
+    if (!name || name.length > 50) { toast.error("Insira o seu nome (máx. 50 caracteres)"); return; }
+    if (formRating < 1) { toast.error("Selecione uma classificação"); return; }
+    if (!comment || comment.length > 500) { toast.error("Escreva um comentário (máx. 500 caracteres)"); return; }
+
+    setSubmitting(true);
+    // Simulate async
+    setTimeout(() => {
+      const newReview: Review = {
+        id: `${productId}-rev-${Date.now()}`,
+        author: name,
+        rating: formRating,
+        date: new Date().toISOString().split("T")[0],
+        comment,
+        helpful: 0,
+        verified: false,
+      };
+      setAllReviews((prev) => [newReview, ...prev]);
+      setFormName("");
+      setFormRating(0);
+      setFormComment("");
+      setShowForm(false);
+      setSubmitting(false);
+      toast.success("Avaliação enviada com sucesso!");
+    }, 600);
+  };
 
   return (
     <section className="mt-12">
