@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { Star, ThumbsUp, User, MessageSquare } from "lucide-react";
+import { Star, ThumbsUp, User, MessageSquare, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Review {
   id: string;
