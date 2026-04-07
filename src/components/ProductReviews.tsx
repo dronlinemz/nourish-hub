@@ -138,7 +138,7 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
               <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                 <div
                   className="h-full bg-accent rounded-full transition-all duration-500"
-                  style={{ width: `${reviews.length ? (count / reviews.length) * 100 : 0}%` }}
+                  style={{ width: `${allReviews.length ? (count / allReviews.length) * 100 : 0}%` }}
                 />
               </div>
               <span className="text-xs text-muted-foreground w-6">{count}</span>
@@ -243,7 +243,7 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
         ))}
       </div>
 
-      {reviews.length > 3 && (
+      {allReviews.length > 3 && (
         <div className="flex justify-center mt-6">
           <Button
             variant="outline"
