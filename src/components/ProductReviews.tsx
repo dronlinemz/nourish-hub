@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { Star, ThumbsUp, User, MessageSquare } from "lucide-react";
+import { Star, ThumbsUp, User, MessageSquare, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Review {
   id: string;
@@ -60,16 +63,51 @@ const StarRating = ({ rating, size = "sm" }: { rating: number; size?: "sm" | "md
 );
 
 const ProductReviews = ({ productId }: ProductReviewsProps) => {
-  const reviews = generateReviews(productId);
+  const [allReviews, setAllReviews] = useState<Review[]>(() => generateReviews(productId));
   const [helpfulClicked, setHelpfulClicked] = useState<Record<string, boolean>>({});
   const [showAll, setShowAll] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [formName, setFormName] = useState("");
+  const [formRating, setFormRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [formComment, setFormComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+  const avgRating = allReviews.length ? allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length : 0;
   const ratingCounts = [5, 4, 3, 2, 1].map(
-    (star) => ({ star, count: reviews.filter((r) => r.rating === star).length })
+    (star) => ({ star, count: allReviews.filter((r) => r.rating === star).length })
   );
 
-  const displayed = showAll ? reviews : reviews.slice(0, 3);
+  const displayed = showAll ? allReviews : allReviews.slice(0, 3);
+
+  const handleSubmitReview = () => {
+    const name = formName.trim();
+    const comment = formComment.trim();
+    if (!name || name.length > 50) { toast.error("Insira o seu nome (máx. 50 caracteres)"); return; }
+    if (formRating < 1) { toast.error("Selecione uma classificação"); return; }
+    if (!comment || comment.length > 500) { toast.error("Escreva um comentário (máx. 500 caracteres)"); return; }
+
+    setSubmitting(true);
+    // Simulate async
+    setTimeout(() => {
+      const newReview: Review = {
+        id: `${productId}-rev-${Date.now()}`,
+        author: name,
+        rating: formRating,
+        date: new Date().toISOString().split("T")[0],
+        comment,
+        helpful: 0,
+        verified: false,
+      };
+      setAllReviews((prev) => [newReview, ...prev]);
+      setFormName("");
+      setFormRating(0);
+      setFormComment("");
+      setShowForm(false);
+      setSubmitting(false);
+      toast.success("Avaliação enviada com sucesso!");
+    }, 600);
+  };
 
   return (
     <section className="mt-12">
@@ -90,7 +128,7 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
         <Card className="p-6 border-border bg-card rounded-xl text-center">
           <p className="text-4xl font-display font-bold text-foreground mb-1">{avgRating.toFixed(1)}</p>
           <StarRating rating={Math.round(avgRating)} size="md" />
-          <p className="text-xs text-muted-foreground mt-2">{reviews.length} avaliações</p>
+          <p className="text-xs text-muted-foreground mt-2">{allReviews.length} avaliações</p>
         </Card>
 
         <div className="flex flex-col justify-center gap-2">
@@ -100,13 +138,72 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
               <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                 <div
                   className="h-full bg-accent rounded-full transition-all duration-500"
-                  style={{ width: `${reviews.length ? (count / reviews.length) * 100 : 0}%` }}
+                  style={{ width: `${allReviews.length ? (count / allReviews.length) * 100 : 0}%` }}
                 />
               </div>
               <span className="text-xs text-muted-foreground w-6">{count}</span>
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Write review button / form */}
+      <div className="mb-6">
+        {!showForm ? (
+          <Button onClick={() => setShowForm(true)} className="rounded-xl bg-primary text-primary-foreground">
+            <Send className="w-4 h-4 mr-2" />
+            Escrever Avaliação
+          </Button>
+        ) : (
+          <Card className="p-5 border-border bg-card rounded-xl space-y-4">
+            <p className="text-sm font-display font-semibold">A sua avaliação</p>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Nome</label>
+              <Input
+                placeholder="O seu nome"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value.slice(0, 50))}
+                className="rounded-xl"
+                maxLength={50}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Classificação</label>
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onMouseEnter={() => setHoverRating(s)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    onClick={() => setFormRating(s)}
+                    className="p-0.5"
+                  >
+                    <Star className={cn("w-6 h-6 transition-colors", s <= (hoverRating || formRating) ? "text-accent fill-accent" : "text-muted-foreground/20")} />
+                  </button>
+                ))}
+                {formRating > 0 && <span className="text-xs text-muted-foreground ml-2">{formRating}/5</span>}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Comentário</label>
+              <Textarea
+                placeholder="Partilhe a sua experiência com este produto..."
+                value={formComment}
+                onChange={(e) => setFormComment(e.target.value.slice(0, 500))}
+                className="rounded-xl min-h-[80px] resize-none"
+                maxLength={500}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1 text-right">{formComment.length}/500</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleSubmitReview} disabled={submitting} className="rounded-xl bg-primary text-primary-foreground">
+                {submitting ? "A enviar..." : "Enviar Avaliação"}
+              </Button>
+              <Button variant="ghost" onClick={() => setShowForm(false)} className="rounded-xl">Cancelar</Button>
+            </div>
+          </Card>
+        )}
       </div>
 
       {/* Review list */}
@@ -146,14 +243,14 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
         ))}
       </div>
 
-      {reviews.length > 3 && (
+      {allReviews.length > 3 && (
         <div className="flex justify-center mt-6">
           <Button
             variant="outline"
             onClick={() => setShowAll(!showAll)}
             className="rounded-xl border-border"
           >
-            {showAll ? "Mostrar menos" : `Ver todas as ${reviews.length} avaliações`}
+            {showAll ? "Mostrar menos" : `Ver todas as ${allReviews.length} avaliações`}
           </Button>
         </div>
       )}
