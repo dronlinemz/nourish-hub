@@ -147,6 +147,65 @@ const ProductReviews = ({ productId }: ProductReviewsProps) => {
         </div>
       </div>
 
+      {/* Write review button / form */}
+      <div className="mb-6">
+        {!showForm ? (
+          <Button onClick={() => setShowForm(true)} className="rounded-xl bg-primary text-primary-foreground">
+            <Send className="w-4 h-4 mr-2" />
+            Escrever Avaliação
+          </Button>
+        ) : (
+          <Card className="p-5 border-border bg-card rounded-xl space-y-4">
+            <p className="text-sm font-display font-semibold">A sua avaliação</p>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Nome</label>
+              <Input
+                placeholder="O seu nome"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value.slice(0, 50))}
+                className="rounded-xl"
+                maxLength={50}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Classificação</label>
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onMouseEnter={() => setHoverRating(s)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    onClick={() => setFormRating(s)}
+                    className="p-0.5"
+                  >
+                    <Star className={cn("w-6 h-6 transition-colors", s <= (hoverRating || formRating) ? "text-accent fill-accent" : "text-muted-foreground/20")} />
+                  </button>
+                ))}
+                {formRating > 0 && <span className="text-xs text-muted-foreground ml-2">{formRating}/5</span>}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Comentário</label>
+              <Textarea
+                placeholder="Partilhe a sua experiência com este produto..."
+                value={formComment}
+                onChange={(e) => setFormComment(e.target.value.slice(0, 500))}
+                className="rounded-xl min-h-[80px] resize-none"
+                maxLength={500}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1 text-right">{formComment.length}/500</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button onClick={handleSubmitReview} disabled={submitting} className="rounded-xl bg-primary text-primary-foreground">
+                {submitting ? "A enviar..." : "Enviar Avaliação"}
+              </Button>
+              <Button variant="ghost" onClick={() => setShowForm(false)} className="rounded-xl">Cancelar</Button>
+            </div>
+          </Card>
+        )}
+      </div>
+
       {/* Review list */}
       <div className="space-y-4">
         {displayed.map((review) => (
