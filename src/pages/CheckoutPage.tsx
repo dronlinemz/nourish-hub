@@ -14,6 +14,7 @@ import { IVA_RATE, DELIVERY_ZONE_LABELS } from "@/types/store";
 import type { PaymentMethod, DeliveryZone, Order } from "@/types/store";
 import { toast } from "sonner";
 import { downloadInvoice } from "@/utils/invoice";
+import { useCreateOrder } from "@/hooks/useOrders";
 
 const CheckoutPage = () => {
   const { items, total: subtotalRaw, clearCart, deliveryZone, setDeliveryZone } = useCart();
