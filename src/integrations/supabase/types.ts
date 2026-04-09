@@ -14,7 +14,218 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          order_id: string
+          product_id: string
+          product_name: string
+          product_price: number
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_id: string
+          product_id: string
+          product_name: string
+          product_price: number
+          quantity?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_id?: string
+          product_id?: string
+          product_name?: string
+          product_price?: number
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          customer_address: string
+          customer_email: string
+          customer_name: string
+          customer_nuit: string | null
+          customer_phone: string
+          delivery_fee: number
+          delivery_zone: Database["public"]["Enums"]["delivery_zone"]
+          id: string
+          iva: number
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          payment_proof_url: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_address?: string
+          customer_email: string
+          customer_name: string
+          customer_nuit?: string | null
+          customer_phone: string
+          delivery_fee: number
+          delivery_zone?: Database["public"]["Enums"]["delivery_zone"]
+          id?: string
+          iva: number
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          payment_proof_url?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal: number
+          total: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_address?: string
+          customer_email?: string
+          customer_name?: string
+          customer_nuit?: string | null
+          customer_phone?: string
+          delivery_fee?: number
+          delivery_zone?: Database["public"]["Enums"]["delivery_zone"]
+          id?: string
+          iva?: number
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          payment_proof_url?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          subtotal?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          category: Database["public"]["Enums"]["product_category"]
+          created_at: string
+          description: string
+          featured: boolean
+          id: string
+          image: string
+          name: string
+          original_price: number | null
+          price: number
+          stock: number
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["product_category"]
+          created_at?: string
+          description?: string
+          featured?: boolean
+          id?: string
+          image?: string
+          name: string
+          original_price?: number | null
+          price: number
+          stock?: number
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["product_category"]
+          created_at?: string
+          description?: string
+          featured?: boolean
+          id?: string
+          image?: string
+          name?: string
+          original_price?: number | null
+          price?: number
+          stock?: number
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          contact_email: string
+          contact_phone: string
+          created_at: string
+          description: string
+          id: string
+          location: string
+          logo: string | null
+          name: string
+          premium_active: boolean
+          premium_ad_discount: number
+          premium_end_date: string | null
+          premium_priority_slots: number
+          premium_start_date: string | null
+          rating: number
+          updated_at: string
+          verified: boolean
+        }
+        Insert: {
+          contact_email?: string
+          contact_phone?: string
+          created_at?: string
+          description?: string
+          id?: string
+          location?: string
+          logo?: string | null
+          name: string
+          premium_active?: boolean
+          premium_ad_discount?: number
+          premium_end_date?: string | null
+          premium_priority_slots?: number
+          premium_start_date?: string | null
+          rating?: number
+          updated_at?: string
+          verified?: boolean
+        }
+        Update: {
+          contact_email?: string
+          contact_phone?: string
+          created_at?: string
+          description?: string
+          id?: string
+          location?: string
+          logo?: string | null
+          name?: string
+          premium_active?: boolean
+          premium_ad_discount?: number
+          premium_end_date?: string | null
+          premium_priority_slots?: number
+          premium_start_date?: string | null
+          rating?: number
+          updated_at?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +234,24 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      delivery_zone: "maputo" | "matola"
+      order_status:
+        | "pending"
+        | "payment-submitted"
+        | "payment-verified"
+        | "shipped"
+        | "delivered"
+        | "cancelled"
+      payment_method: "mpesa" | "bank-transfer"
+      product_category:
+        | "alimentacao-saudavel"
+        | "suplementos"
+        | "primeiros-socorros"
+        | "equipamento-estudante"
+        | "fitness-recuperacao"
+        | "ergonomia"
+        | "nutricao"
+        | "diagnostico"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +378,27 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      delivery_zone: ["maputo", "matola"],
+      order_status: [
+        "pending",
+        "payment-submitted",
+        "payment-verified",
+        "shipped",
+        "delivered",
+        "cancelled",
+      ],
+      payment_method: ["mpesa", "bank-transfer"],
+      product_category: [
+        "alimentacao-saudavel",
+        "suplementos",
+        "primeiros-socorros",
+        "equipamento-estudante",
+        "fitness-recuperacao",
+        "ergonomia",
+        "nutricao",
+        "diagnostico",
+      ],
+    },
   },
 } as const
