@@ -53,7 +53,7 @@ const TRUST_ITEMS = [
 ];
 
 const Index = () => {
-  const { products, adCampaigns, suppliers } = useStore();
+  const { products, adCampaigns, suppliers, isLoading } = useStore();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [search, setSearch] = useState("");
