@@ -18,7 +18,8 @@ import { useCreateOrder } from "@/hooks/useOrders";
 
 const CheckoutPage = () => {
   const { items, total: subtotalRaw, clearCart, deliveryZone, setDeliveryZone } = useCart();
-  const { addOrder, deliveryFees } = useStore();
+  const { deliveryFees } = useStore();
+  const createOrder = useCreateOrder();
   const navigate = useNavigate();
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("mpesa");
