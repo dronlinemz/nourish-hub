@@ -14,10 +14,12 @@ import { IVA_RATE, DELIVERY_ZONE_LABELS } from "@/types/store";
 import type { PaymentMethod, DeliveryZone, Order } from "@/types/store";
 import { toast } from "sonner";
 import { downloadInvoice } from "@/utils/invoice";
+import { useCreateOrder } from "@/hooks/useOrders";
 
 const CheckoutPage = () => {
   const { items, total: subtotalRaw, clearCart, deliveryZone, setDeliveryZone } = useCart();
-  const { addOrder, deliveryFees } = useStore();
+  const { deliveryFees } = useStore();
+  const createOrder = useCreateOrder();
   const navigate = useNavigate();
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("mpesa");
@@ -72,7 +74,7 @@ const CheckoutPage = () => {
     );
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.phone || !form.address) {
       toast.error("Preencha todos os campos obrigatórios");
@@ -83,30 +85,33 @@ const CheckoutPage = () => {
       return;
     }
 
-    const order: Order = {
-      id: `ORD-${Date.now()}`,
-      items: [...items],
-      subtotal,
-      iva,
-      deliveryFee,
-      deliveryZone,
-      total: grandTotal,
-      customerName: form.name,
-      customerEmail: form.email,
-      customerPhone: form.phone,
-      customerAddress: form.address,
-      customerNuit: form.nuit || undefined,
-      paymentMethod,
-      paymentProofUrl: proofFile ? URL.createObjectURL(proofFile) : undefined,
-      status: paymentMethod === "mpesa" ? "pending" : "payment-submitted",
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const orderData = {
+        items: [...items],
+        subtotal,
+        iva,
+        deliveryFee,
+        deliveryZone,
+        total: grandTotal,
+        customerName: form.name,
+        customerEmail: form.email,
+        customerPhone: form.phone,
+        customerAddress: form.address,
+        customerNuit: form.nuit || undefined,
+        paymentMethod,
+        paymentProofUrl: proofFile ? URL.createObjectURL(proofFile) : undefined,
+        status: (paymentMethod === "mpesa" ? "pending" : "payment-submitted") as Order["status"],
+      };
 
-    addOrder(order);
-    clearCart();
-    setLastOrder(order);
-    setSubmitted(true);
-    toast.success("Encomenda submetida com sucesso!");
+      const result = await createOrder.mutateAsync({ order: orderData, items: [...items] });
+      clearCart();
+      setLastOrder(result);
+      setSubmitted(true);
+      toast.success("Encomenda submetida com sucesso!");
+    } catch (err) {
+      toast.error("Erro ao submeter encomenda. Tente novamente.");
+      console.error(err);
+    }
   };
 
   return (

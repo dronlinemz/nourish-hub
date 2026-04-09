@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useMemo } from "react";
 import type { Product, Supplier, Order, AdCampaign, DeliveryZone, PremiumSettings } from "@/types/store";
-import { MOCK_SUPPLIERS, MOCK_PRODUCTS } from "@/data/mockData";
 import { DELIVERY_FEES as DEFAULT_DELIVERY_FEES } from "@/types/store";
+import { useProducts } from "@/hooks/useProducts";
+import { useSuppliers } from "@/hooks/useSuppliers";
+import { useOrders } from "@/hooks/useOrders";
 
 const DEFAULT_PREMIUM_SETTINGS: PremiumSettings = {
   adDiscount: 0.15,
@@ -38,41 +40,6 @@ const MOCK_ADS: AdCampaign[] = [
     space: "product-detail", status: "paused", startDate: "2026-03-10", endDate: "2026-06-10",
     expectedRevenue: 8000, realizedRevenue: 1200, impressions: 3200, clicks: 85, createdAt: "2026-03-10T00:00:00Z",
   },
-  {
-    id: "ad-5", partner: "DrOnline Market", title: "Proteína Whey Isolada 1kg",
-    description: "Produto em destaque", cta: "Ver", url: "prod-1",
-    image: "https://images.unsplash.com/photo-1593095948071-474c5cc2c1cf?w=400&h=400&fit=crop",
-    space: "featured", status: "active", startDate: "2026-03-01", endDate: "2026-12-31",
-    expectedRevenue: 0, realizedRevenue: 0, impressions: 0, clicks: 0, createdAt: "2026-03-01T00:00:00Z",
-  },
-  {
-    id: "ad-6", partner: "DrOnline Market", title: "Kit Primeiros Socorros Completo",
-    description: "Produto em destaque", cta: "Ver", url: "prod-2",
-    image: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?w=400&h=400&fit=crop",
-    space: "featured", status: "active", startDate: "2026-03-01", endDate: "2026-12-31",
-    expectedRevenue: 0, realizedRevenue: 0, impressions: 0, clicks: 0, createdAt: "2026-03-01T00:00:00Z",
-  },
-  {
-    id: "ad-7", partner: "DrOnline Market", title: "Granola Orgânica com Frutos Secos",
-    description: "Produto em destaque", cta: "Ver", url: "prod-4",
-    image: "https://images.unsplash.com/photo-1517093157656-b9eccef91cb1?w=400&h=400&fit=crop",
-    space: "featured", status: "active", startDate: "2026-03-01", endDate: "2026-12-31",
-    expectedRevenue: 0, realizedRevenue: 0, impressions: 0, clicks: 0, createdAt: "2026-03-01T00:00:00Z",
-  },
-  {
-    id: "ad-8", partner: "DrOnline Market", title: "Multivitamínico Completo",
-    description: "Produto em destaque", cta: "Ver", url: "prod-7",
-    image: "https://images.unsplash.com/photo-1550572017-edd951aa8f72?w=400&h=400&fit=crop",
-    space: "featured", status: "active", startDate: "2026-03-01", endDate: "2026-12-31",
-    expectedRevenue: 0, realizedRevenue: 0, impressions: 0, clicks: 0, createdAt: "2026-03-01T00:00:00Z",
-  },
-  {
-    id: "ad-9", partner: "DrOnline Market", title: "Balança Digital Inteligente",
-    description: "Produto em destaque", cta: "Ver", url: "prod-10",
-    image: "https://images.unsplash.com/photo-1523676060187-f55189cb4e28?w=400&h=400&fit=crop",
-    space: "featured", status: "active", startDate: "2026-03-01", endDate: "2026-12-31",
-    expectedRevenue: 0, realizedRevenue: 0, impressions: 0, clicks: 0, createdAt: "2026-03-01T00:00:00Z",
-  },
 ];
 
 interface StoreContextType {
@@ -82,6 +49,7 @@ interface StoreContextType {
   adCampaigns: AdCampaign[];
   deliveryFees: Record<DeliveryZone, number>;
   premiumSettings: PremiumSettings;
+  isLoading: boolean;
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
@@ -96,22 +64,36 @@ interface StoreContextType {
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
-  const [suppliers, setSuppliers] = useState<Supplier[]>(MOCK_SUPPLIERS);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const { data: dbProducts, isLoading: loadingProducts } = useProducts();
+  const { data: dbSuppliers, isLoading: loadingSuppliers } = useSuppliers();
+  const { data: dbOrders, isLoading: loadingOrders } = useOrders();
+
+  // Local state fallbacks for admin mutations (ads, fees, etc. still local)
+  const [localProducts, setProducts] = useState<Product[]>([]);
+  const [localSuppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [localOrders, setLocalOrders] = useState<Order[]>([]);
   const [adCampaigns, setAdCampaigns] = useState<AdCampaign[]>(MOCK_ADS);
   const [deliveryFees, setDeliveryFees] = useState<Record<DeliveryZone, number>>(DEFAULT_DELIVERY_FEES);
   const [premiumSettings, setPremiumSettings] = useState<PremiumSettings>(DEFAULT_PREMIUM_SETTINGS);
 
+  const products = dbProducts ?? localProducts;
+  const suppliers = dbSuppliers ?? localSuppliers;
+  const orders = dbOrders ?? localOrders;
+  const isLoading = loadingProducts || loadingSuppliers;
+
   const getSupplier = (id: string) => suppliers.find((s) => s.id === id);
-  const addOrder = (order: Order) => setOrders((prev) => [order, ...prev]);
+  const addOrder = (order: Order) => setLocalOrders((prev) => [order, ...prev]);
   const updateOrderStatus = (orderId: string, status: Order["status"]) => {
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
+    setLocalOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
   };
 
   return (
     <StoreContext.Provider
-      value={{ products, suppliers, orders, adCampaigns, deliveryFees, premiumSettings, setProducts, setSuppliers, setOrders, setAdCampaigns, setDeliveryFees, setPremiumSettings, getSupplier, addOrder, updateOrderStatus }}
+      value={{
+        products, suppliers, orders, adCampaigns, deliveryFees, premiumSettings, isLoading,
+        setProducts, setSuppliers, setOrders: setLocalOrders, setAdCampaigns, setDeliveryFees,
+        setPremiumSettings, getSupplier, addOrder, updateOrderStatus,
+      }}
     >
       {children}
     </StoreContext.Provider>

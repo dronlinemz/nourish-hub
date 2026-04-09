@@ -6,6 +6,7 @@ import { useStore } from "@/contexts/StoreContext";
 import type { Product } from "@/types/store";
 import { toast } from "sonner";
 import { useState } from "react";
+import { motion } from "framer-motion";
 
 interface ProductCardProps {
   product: Product;
@@ -38,7 +39,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <Link to={`/produto/${product.id}`} className="group block h-full">
-      <div className="bg-card rounded-xl border border-border/50 overflow-hidden hover:shadow-lg hover:shadow-foreground/[0.04] hover:border-primary/20 transition-all duration-300 h-full flex flex-col">
+      <motion.div
+        whileHover={{ y: -4 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className="bg-card rounded-xl border border-border/50 overflow-hidden hover:shadow-lg hover:shadow-foreground/[0.04] hover:border-primary/20 transition-all duration-300 h-full flex flex-col"
+      >
         {/* Image */}
         <div className="aspect-[4/3] overflow-hidden bg-muted relative">
           {imgError ? (
@@ -100,7 +105,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
             </Button>
           </div>
         </div>
-      </div>
+      </motion.div>
     </Link>
   );
 };
