@@ -46,8 +46,6 @@ const App = () => (
         </StoreProvider>
       </AuthProvider>
     </TooltipProvider>
-
-    </TooltipProvider>
   </QueryClientProvider>
 );
 
