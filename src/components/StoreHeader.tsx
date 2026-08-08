@@ -2,10 +2,12 @@ import { Link, useLocation } from "react-router-dom";
 import { ShoppingCart, Menu, X, User, Phone, Clock } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 
 const StoreHeader = () => {
   const { itemCount } = useCart();
+  const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -67,9 +69,9 @@ const StoreHeader = () => {
           </nav>
 
           <div className="flex items-center gap-1">
-            <Link to="/admin" className="hidden md:inline-flex">
+            <Link to={user ? "/fornecedor" : "/auth"} className="hidden md:inline-flex">
               <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary rounded-lg h-9 text-xs">
-                <User className="w-3.5 h-3.5 mr-1.5" /> Admin
+                <User className="w-3.5 h-3.5 mr-1.5" /> {user ? "Minha Conta" : "Fornecedores"}
               </Button>
             </Link>
             <Link to="/carrinho" className="relative">
@@ -95,7 +97,7 @@ const StoreHeader = () => {
         {menuOpen && (
           <div className="md:hidden border-t border-border/40 bg-card animate-fade-in">
             <nav className="container py-2 flex flex-col gap-0.5">
-              {[...navLinks, { to: "/admin", label: "Admin" }].map((link) => (
+              {[...navLinks, { to: user ? "/fornecedor" : "/auth", label: user ? "Minha Conta" : "Fornecedores" }].map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}
