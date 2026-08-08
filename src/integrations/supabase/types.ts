@@ -169,8 +169,36 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id: string
+          phone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       suppliers: {
         Row: {
+          approved: boolean
           contact_email: string
           contact_phone: string
           created_at: string
@@ -179,6 +207,7 @@ export type Database = {
           location: string
           logo: string | null
           name: string
+          owner_id: string | null
           premium_active: boolean
           premium_ad_discount: number
           premium_end_date: string | null
@@ -189,6 +218,7 @@ export type Database = {
           verified: boolean
         }
         Insert: {
+          approved?: boolean
           contact_email?: string
           contact_phone?: string
           created_at?: string
@@ -197,6 +227,7 @@ export type Database = {
           location?: string
           logo?: string | null
           name: string
+          owner_id?: string | null
           premium_active?: boolean
           premium_ad_discount?: number
           premium_end_date?: string | null
@@ -207,6 +238,7 @@ export type Database = {
           verified?: boolean
         }
         Update: {
+          approved?: boolean
           contact_email?: string
           contact_phone?: string
           created_at?: string
@@ -215,6 +247,7 @@ export type Database = {
           location?: string
           logo?: string | null
           name?: string
+          owner_id?: string | null
           premium_active?: boolean
           premium_ad_discount?: number
           premium_end_date?: string | null
@@ -226,14 +259,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "supplier" | "customer"
       delivery_zone: "maputo" | "matola"
       order_status:
         | "pending"
@@ -379,6 +440,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "supplier", "customer"],
       delivery_zone: ["maputo", "matola"],
       order_status: [
         "pending",
