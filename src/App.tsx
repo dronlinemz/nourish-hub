@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/contexts/CartContext";
 import { StoreProvider } from "@/contexts/StoreContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index.tsx";
 import ProductDetail from "./pages/ProductDetail.tsx";
 import CartPage from "./pages/CartPage.tsx";
@@ -12,7 +13,10 @@ import CheckoutPage from "./pages/CheckoutPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
 import PartnersPage from "./pages/PartnersPage.tsx";
 import AboutPage from "./pages/AboutPage.tsx";
+import AuthPage from "./pages/AuthPage.tsx";
+import SupplierDashboard from "./pages/SupplierDashboard.tsx";
 import NotFound from "./pages/NotFound.tsx";
+
 
 const queryClient = new QueryClient();
 
