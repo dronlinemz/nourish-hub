@@ -23,24 +23,30 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <StoreProvider>
-        <CartProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/produto/:id" element={<ProductDetail />} />
-              <Route path="/carrinho" element={<CartPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/parceiros" element={<PartnersPage />} />
-              <Route path="/sobre" element={<AboutPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </CartProvider>
-      </StoreProvider>
+      <AuthProvider>
+        <StoreProvider>
+          <CartProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/produto/:id" element={<ProductDetail />} />
+                <Route path="/carrinho" element={<CartPage />} />
+                <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/parceiros" element={<PartnersPage />} />
+                <Route path="/sobre" element={<AboutPage />} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/fornecedor" element={<SupplierDashboard />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </CartProvider>
+        </StoreProvider>
+      </AuthProvider>
+    </TooltipProvider>
+
     </TooltipProvider>
   </QueryClientProvider>
 );
