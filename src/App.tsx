@@ -16,6 +16,7 @@ import AboutPage from "./pages/AboutPage.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import SupplierDashboard from "./pages/SupplierDashboard.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import RequireAdmin from "./components/RequireAdmin.tsx";
 
 
 const queryClient = new QueryClient();
@@ -34,7 +35,7 @@ const App = () => (
                 <Route path="/produto/:id" element={<ProductDetail />} />
                 <Route path="/carrinho" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
                 <Route path="/parceiros" element={<PartnersPage />} />
                 <Route path="/sobre" element={<AboutPage />} />
                 <Route path="/auth" element={<AuthPage />} />
