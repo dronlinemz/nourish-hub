@@ -5,15 +5,17 @@ import type { Database } from "@/integrations/supabase/types";
 
 const PAYMENT_PROOFS_BUCKET = "nourish-payment-proofs";
 
+type OrderItemWithProduct = Database["public"]["Tables"]["order_items"]["Row"] & {
+  products: Database["public"]["Tables"]["products"]["Row"] | null;
+};
+
 type OrderRow = Database["public"]["Tables"]["orders"]["Row"] & {
-  order_items: Array<Database["public"]["Tables"]["order_items"]["Row"] & {
-    products: Database["public"]["Tables"]["products"]["Row"] | null;
-  }>;
+  order_items: OrderItemWithProduct[];
 };
 
 const mapOrder = (row: OrderRow): Order => ({
   id: row.id,
-  items: (row.order_items ?? []).map((item) => ({
+  items: row.order_items.map((item) => ({
     quantity: Number(item.quantity),
     product: {
       id: item.product_id,
@@ -48,12 +50,31 @@ export const useOrders = () =>
   useQuery({
     queryKey: ["orders"],
     queryFn: async (): Promise<Order[]> => {
-      const { data, error } = await supabase
+      const { data: orderRows, error: ordersError } = await supabase
         .from("orders")
-        .select("*, order_items(*, products(*))")
+        .select("*")
         .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []).map(mapOrder);
+      if (ordersError) throw ordersError;
+      if (!orderRows?.length) return [];
+
+      const orderIds = orderRows.map((order) => order.id);
+      const { data: itemRows, error: itemsError } = await supabase
+        .from("order_items")
+        .select("*, products(*)")
+        .in("order_id", orderIds);
+      if (itemsError) throw itemsError;
+
+      const itemsByOrder = new Map<string, OrderItemWithProduct[]>();
+      for (const item of itemRows ?? []) {
+        const current = itemsByOrder.get(item.order_id) ?? [];
+        current.push(item);
+        itemsByOrder.set(item.order_id, current);
+      }
+
+      return orderRows.map((order) => mapOrder({
+        ...order,
+        order_items: itemsByOrder.get(order.id) ?? [],
+      }));
     },
   });
 
