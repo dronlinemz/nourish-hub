@@ -9,6 +9,7 @@ const mapSupplier = (row: any): Supplier => ({
   location: row.location,
   rating: Number(row.rating),
   verified: row.verified,
+  approved: row.approved,
   contactEmail: row.contact_email,
   contactPhone: row.contact_phone,
   logo: row.logo ?? undefined,
