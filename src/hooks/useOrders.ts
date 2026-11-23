@@ -1,12 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Order, CartItem } from "@/types/store";
+import type { Database } from "@/integrations/supabase/types";
 
 const PAYMENT_PROOFS_BUCKET = "nourish-payment-proofs";
 
-const mapOrder = (row: any): Order => ({
+type OrderRow = Database["public"]["Tables"]["orders"]["Row"] & {
+  order_items: Array<Database["public"]["Tables"]["order_items"]["Row"] & {
+    products: Database["public"]["Tables"]["products"]["Row"] | null;
+  }>;
+};
+
+const mapOrder = (row: OrderRow): Order => ({
   id: row.id,
-  items: (row.order_items ?? []).map((item: any) => ({
+  items: (row.order_items ?? []).map((item) => ({
     quantity: Number(item.quantity),
     product: {
       id: item.product_id,
