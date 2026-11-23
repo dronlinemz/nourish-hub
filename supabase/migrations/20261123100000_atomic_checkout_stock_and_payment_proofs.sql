@@ -341,6 +341,12 @@ INSERT INTO public.store_settings (id)
 VALUES ('default')
 ON CONFLICT (id) DO NOTHING;
 
+ALTER TABLE public.store_settings
+  ADD COLUMN IF NOT EXISTS bank_name text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS bank_account text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS bank_nib text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS bank_account_holder text NOT NULL DEFAULT '';
+
 ALTER TABLE public.store_settings ENABLE ROW LEVEL SECURITY;
 GRANT SELECT ON public.store_settings TO anon, authenticated;
 GRANT INSERT, UPDATE ON public.store_settings TO authenticated;
