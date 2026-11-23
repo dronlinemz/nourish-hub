@@ -354,3 +354,60 @@ $$;
 
 REVOKE ALL ON FUNCTION public.admin_update_order_status(uuid, public.order_status) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.admin_update_order_status(uuid, public.order_status) TO authenticated;
+
+
+-- Unapproved supplier catalogues remain private to their owner and admins.
+DROP POLICY IF EXISTS "Anyone can view suppliers" ON public.suppliers;
+CREATE POLICY "Approved suppliers are public"
+ON public.suppliers FOR SELECT
+TO anon, authenticated
+USING (
+  approved = true
+  OR owner_id = (select auth.uid())
+  OR public.has_role((select auth.uid()), 'admin'::public.app_role)
+);
+
+DROP POLICY IF EXISTS "Anyone can view products" ON public.products;
+CREATE POLICY "Approved supplier products are public"
+ON public.products FOR SELECT
+TO anon, authenticated
+USING (
+  public.has_role((select auth.uid()), 'admin'::public.app_role)
+  OR EXISTS (
+    SELECT 1
+    FROM public.suppliers AS s
+    WHERE s.id = supplier_id
+      AND (s.approved = true OR s.owner_id = (select auth.uid()))
+  )
+);
+
+-- A supplier may edit its business profile but cannot self-approve, self-verify,
+-- activate premium status, or change commercial entitlements.
+CREATE OR REPLACE FUNCTION public.protect_supplier_approval_fields()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NOT NULL
+     AND NOT public.has_role(auth.uid(), 'admin'::public.app_role)
+     AND (
+       NEW.approved IS DISTINCT FROM OLD.approved
+       OR NEW.verified IS DISTINCT FROM OLD.verified
+       OR NEW.premium_active IS DISTINCT FROM OLD.premium_active
+       OR NEW.premium_start_date IS DISTINCT FROM OLD.premium_start_date
+       OR NEW.premium_end_date IS DISTINCT FROM OLD.premium_end_date
+       OR NEW.premium_ad_discount IS DISTINCT FROM OLD.premium_ad_discount
+       OR NEW.premium_priority_slots IS DISTINCT FROM OLD.premium_priority_slots
+     ) THEN
+    RAISE EXCEPTION 'Apenas a administração pode alterar aprovação, verificação e benefícios comerciais.' USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS protect_supplier_approval_fields ON public.suppliers;
+CREATE TRIGGER protect_supplier_approval_fields
+BEFORE UPDATE ON public.suppliers
+FOR EACH ROW EXECUTE FUNCTION public.protect_supplier_approval_fields();
