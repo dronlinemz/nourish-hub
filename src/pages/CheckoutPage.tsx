@@ -99,17 +99,17 @@ const CheckoutPage = () => {
         customerAddress: form.address,
         customerNuit: form.nuit || undefined,
         paymentMethod,
-        paymentProofUrl: proofFile ? URL.createObjectURL(proofFile) : undefined,
+        paymentProofUrl: undefined,
         status: (paymentMethod === "mpesa" ? "pending" : "payment-submitted") as Order["status"],
       };
 
-      const result = await createOrder.mutateAsync({ order: orderData, items: [...items] });
+      const result = await createOrder.mutateAsync({ order: orderData, items: [...items], proofFile });
       clearCart();
       setLastOrder(result);
       setSubmitted(true);
       toast.success("Encomenda submetida com sucesso!");
     } catch (err) {
-      toast.error("Erro ao submeter encomenda. Tente novamente.");
+      toast.error(err instanceof Error ? err.message : "Erro ao submeter encomenda. Tente novamente.");
       console.error(err);
     }
   };
@@ -229,8 +229,8 @@ const CheckoutPage = () => {
               <div className="border-t border-border pt-3 mb-4">
                 <div className="flex justify-between font-display font-bold text-lg"><span>Total</span><span className="text-primary">{formatPrice(grandTotal)}</span></div>
               </div>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl">
-                <CreditCard className="w-4 h-4 mr-2" /> Confirmar Encomenda
+              <Button type="submit" disabled={createOrder.isPending} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl">
+                <CreditCard className="w-4 h-4 mr-2" /> {createOrder.isPending ? "A submeter..." : "Confirmar Encomenda"}
               </Button>
               <p className="text-[10px] text-muted-foreground text-center mt-3">
                 {paymentMethod === "mpesa" ? "A factura será gerada após confirmação do pagamento M-Pesa" : "Ao confirmar, será gerada uma factura electrónica"}
