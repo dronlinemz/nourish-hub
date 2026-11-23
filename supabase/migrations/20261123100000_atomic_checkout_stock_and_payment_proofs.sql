@@ -239,6 +239,25 @@ $$;
 REVOKE ALL ON FUNCTION public.admin_update_order_status(uuid, public.order_status) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.admin_update_order_status(uuid, public.order_status) TO authenticated;
 
+-- Public catalogue RLS can test only the caller's own admin role without
+-- granting anon access to has_role(user_id, role), which accepts arbitrary IDs.
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = auth.uid()
+      AND role = 'admin'::public.app_role
+  )
+$;
+
+REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated;
+
 -- Unapproved supplier catalogues remain private to their owner and admins.
 DROP POLICY IF EXISTS "Anyone can view suppliers" ON public.suppliers;
 CREATE POLICY "Approved suppliers are public"
@@ -246,14 +265,14 @@ ON public.suppliers FOR SELECT TO anon, authenticated
 USING (
   approved = true
   OR owner_id = (select auth.uid())
-  OR public.has_role((select auth.uid()), 'admin'::public.app_role)
+  OR public.is_admin()
 );
 
 DROP POLICY IF EXISTS "Anyone can view products" ON public.products;
 CREATE POLICY "Approved supplier products are public"
 ON public.products FOR SELECT TO anon, authenticated
 USING (
-  public.has_role((select auth.uid()), 'admin'::public.app_role)
+  public.is_admin()
   OR EXISTS (
     SELECT 1 FROM public.suppliers AS s
     WHERE s.id = supplier_id
