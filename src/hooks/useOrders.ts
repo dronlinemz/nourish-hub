@@ -19,7 +19,6 @@ const mapOrder = (row: any): Order => ({
       stock: Number(item.products?.stock ?? 0),
       featured: item.products?.featured ?? false,
       createdAt: item.products?.created_at ?? item.created_at,
-    }
     },
   })),
   subtotal: Number(row.subtotal),
