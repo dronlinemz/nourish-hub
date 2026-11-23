@@ -391,17 +391,28 @@ SET search_path = public
 AS $$
 BEGIN
   IF auth.uid() IS NOT NULL
-     AND NOT public.has_role(auth.uid(), 'admin'::public.app_role)
-     AND (
-       NEW.approved IS DISTINCT FROM OLD.approved
-       OR NEW.verified IS DISTINCT FROM OLD.verified
-       OR NEW.premium_active IS DISTINCT FROM OLD.premium_active
-       OR NEW.premium_start_date IS DISTINCT FROM OLD.premium_start_date
-       OR NEW.premium_end_date IS DISTINCT FROM OLD.premium_end_date
-       OR NEW.premium_ad_discount IS DISTINCT FROM OLD.premium_ad_discount
-       OR NEW.premium_priority_slots IS DISTINCT FROM OLD.premium_priority_slots
-     ) THEN
-    RAISE EXCEPTION 'Apenas a administração pode alterar aprovação, verificação e benefícios comerciais.' USING ERRCODE = '42501';
+     AND NOT public.has_role(auth.uid(), 'admin'::public.app_role) THEN
+    IF TG_OP = 'INSERT' THEN
+      IF NEW.approved OR NEW.verified OR NEW.premium_active
+         OR NEW.rating <> 0
+         OR NEW.premium_ad_discount <> 0.15
+         OR NEW.premium_priority_slots <> 2
+         OR NEW.premium_start_date IS NOT NULL
+         OR NEW.premium_end_date IS NOT NULL THEN
+        RAISE EXCEPTION 'Apenas a administração pode aprovar, verificar ou atribuir benefícios comerciais.' USING ERRCODE = '42501';
+      END IF;
+    ELSIF (
+      NEW.approved IS DISTINCT FROM OLD.approved
+      OR NEW.verified IS DISTINCT FROM OLD.verified
+      OR NEW.premium_active IS DISTINCT FROM OLD.premium_active
+      OR NEW.premium_start_date IS DISTINCT FROM OLD.premium_start_date
+      OR NEW.premium_end_date IS DISTINCT FROM OLD.premium_end_date
+      OR NEW.premium_ad_discount IS DISTINCT FROM OLD.premium_ad_discount
+      OR NEW.premium_priority_slots IS DISTINCT FROM OLD.premium_priority_slots
+      OR NEW.rating IS DISTINCT FROM OLD.rating
+    ) THEN
+      RAISE EXCEPTION 'Apenas a administração pode alterar aprovação, verificação, classificação e benefícios comerciais.' USING ERRCODE = '42501';
+    END IF;
   END IF;
   RETURN NEW;
 END;
@@ -409,5 +420,5 @@ $$;
 
 DROP TRIGGER IF EXISTS protect_supplier_approval_fields ON public.suppliers;
 CREATE TRIGGER protect_supplier_approval_fields
-BEFORE UPDATE ON public.suppliers
+BEFORE INSERT OR UPDATE ON public.suppliers
 FOR EACH ROW EXECUTE FUNCTION public.protect_supplier_approval_fields();
