@@ -50,6 +50,7 @@ interface StoreContextType {
   adCampaigns: AdCampaign[];
   deliveryFees: Record<DeliveryZone, number>;
   premiumSettings: PremiumSettings;
+  bankDetails: { bankName: string; account: string; nib: string; accountHolder: string };
   isLoading: boolean;
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
@@ -79,6 +80,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const orders = dbOrders ?? localOrders;
   const deliveryFees = dbSettings?.deliveryFees ?? DEFAULT_DELIVERY_FEES;
   const premiumSettings = dbSettings?.premiumSettings ?? DEFAULT_PREMIUM_SETTINGS;
+  const bankDetails = dbSettings?.bankDetails ?? { bankName: "", account: "", nib: "", accountHolder: "" };
   const isLoading = loadingProducts || loadingSuppliers || loadingSettings;
 
   const getSupplier = (id: string) => suppliers.find((s) => s.id === id);
@@ -90,7 +92,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <StoreContext.Provider
       value={{
-        products, suppliers, orders, adCampaigns, deliveryFees, premiumSettings, isLoading,
+        products, suppliers, orders, adCampaigns, deliveryFees, premiumSettings, bankDetails, isLoading,
         setProducts, setSuppliers, setOrders: setLocalOrders, setAdCampaigns,
         getSupplier, addOrder, updateOrderStatus,
       }}
