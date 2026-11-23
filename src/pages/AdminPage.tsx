@@ -23,6 +23,7 @@ import { generatePartnerRevenueReport, generateAdRevenueReport, openReport } fro
 import { downloadInvoice } from "@/utils/invoice";
 import { getPaymentProofSignedUrl, useUpdateOrderStatus } from "@/hooks/useOrders";
 import { useDeleteProduct, useDeleteSupplier, useSaveAdminSupplier, useSaveProduct, useSetProductFeatured } from "@/hooks/useSupplierAccount";
+import { useUpdateStoreSettings } from "@/hooks/useStoreSettings";
 
 type Tab = "dashboard" | "products" | "suppliers" | "orders" | "ads" | "reports" | "settings";
 
@@ -1087,26 +1088,67 @@ const ReportsTab = () => {
 
 /* ─── Settings (Delivery Fees + Premium) ─── */
 const SettingsTab = () => {
-  const { deliveryFees, setDeliveryFees, premiumSettings, setPremiumSettings } = useStore();
-  const [fees, setFees] = useState({ maputo: String(deliveryFees.maputo), matola: String(deliveryFees.matola) });
+  const { deliveryFees, premiumSettings } = useStore();
+  const updateSettings = useUpdateStoreSettings();
+  const [fees, setFees] = useState({
+    maputo: String(deliveryFees.maputo),
+    matola: String(deliveryFees.matola),
+  });
   const [premium, setPremium] = useState({
     adDiscount: String(Math.round(premiumSettings.adDiscount * 100)),
     prioritySlots: String(premiumSettings.prioritySlots),
     subscriptionMonths: String(premiumSettings.subscriptionMonths),
   });
 
-  const handleSaveFees = () => {
-    setDeliveryFees({ maputo: Number(fees.maputo) || 0, matola: Number(fees.matola) || 0 });
-    toast.success("Taxas de entrega actualizadas");
+  useEffect(() => {
+    setFees({ maputo: String(deliveryFees.maputo), matola: String(deliveryFees.matola) });
+  }, [deliveryFees.maputo, deliveryFees.matola]);
+
+  useEffect(() => {
+    setPremium({
+      adDiscount: String(Math.round(premiumSettings.adDiscount * 100)),
+      prioritySlots: String(premiumSettings.prioritySlots),
+      subscriptionMonths: String(premiumSettings.subscriptionMonths),
+    });
+  }, [premiumSettings.adDiscount, premiumSettings.prioritySlots, premiumSettings.subscriptionMonths]);
+
+  const handleSaveFees = async () => {
+    const maputo = Number(fees.maputo);
+    const matola = Number(fees.matola);
+    if (!Number.isFinite(maputo) || maputo < 0 || !Number.isFinite(matola) || matola < 0) {
+      toast.error("Indique taxas de entrega válidas.");
+      return;
+    }
+    try {
+      await updateSettings.mutateAsync({
+        deliveryFees: { maputo, matola },
+        premiumSettings,
+      });
+      toast.success("Taxas de entrega guardadas.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível guardar as taxas.");
+    }
   };
 
-  const handleSavePremium = () => {
-    setPremiumSettings({
-      adDiscount: (Number(premium.adDiscount) || 15) / 100,
-      prioritySlots: Number(premium.prioritySlots) || 2,
-      subscriptionMonths: Number(premium.subscriptionMonths) || 6,
-    });
-    toast.success("Benefícios Premium actualizados");
+  const handleSavePremium = async () => {
+    const adDiscount = Number(premium.adDiscount);
+    const prioritySlots = Number(premium.prioritySlots);
+    const subscriptionMonths = Number(premium.subscriptionMonths);
+    if (!Number.isFinite(adDiscount) || adDiscount < 0 || adDiscount > 100
+      || !Number.isInteger(prioritySlots) || prioritySlots < 0 || prioritySlots > 10
+      || !Number.isInteger(subscriptionMonths) || subscriptionMonths < 1 || subscriptionMonths > 24) {
+      toast.error("Verifique os limites dos benefícios Premium.");
+      return;
+    }
+    try {
+      await updateSettings.mutateAsync({
+        deliveryFees,
+        premiumSettings: { adDiscount: adDiscount / 100, prioritySlots, subscriptionMonths },
+      });
+      toast.success("Benefícios Premium guardados.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível guardar os benefícios.");
+    }
   };
 
   return (
@@ -1116,23 +1158,23 @@ const SettingsTab = () => {
       <Card>
         <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Truck className="w-5 h-5 text-primary" /> Taxas de Entrega</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">Defina as taxas de entrega para cada zona. Os valores serão aplicados automaticamente no checkout.</p>
+          <p className="text-sm text-muted-foreground">As taxas são guardadas no servidor e aplicadas no checkout e na validação da encomenda.</p>
           <div className="grid sm:grid-cols-2 gap-4 max-w-md">
             {(Object.entries(DELIVERY_ZONE_LABELS) as [DeliveryZone, string][]).map(([zone, label]) => (
               <div key={zone}>
                 <Label>{label} (MZN)</Label>
-                <Input type="number" value={fees[zone]} onChange={(e) => setFees({ ...fees, [zone]: e.target.value })} className="rounded-xl" />
+                <Input type="number" min="0" step="0.01" value={fees[zone]} onChange={(e) => setFees({ ...fees, [zone]: e.target.value })} className="rounded-xl" />
               </div>
             ))}
           </div>
-          <Button onClick={handleSaveFees} className="bg-primary text-primary-foreground rounded-xl"><CheckCircle className="w-4 h-4 mr-1.5" /> Guardar Taxas</Button>
+          <Button onClick={handleSaveFees} disabled={updateSettings.isPending} className="bg-primary text-primary-foreground rounded-xl"><CheckCircle className="w-4 h-4 mr-1.5" /> Guardar Taxas</Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Crown className="w-5 h-5 text-amber-500" /> Programa Premium — Benefícios</CardTitle></CardHeader>
         <CardContent className="space-y-5">
-          <p className="text-sm text-muted-foreground">Configure os benefícios do pacote Premium. As alterações serão aplicadas a todas as novas subscrições e reflectidas no marketplace.</p>
+          <p className="text-sm text-muted-foreground">Os benefícios são persistidos e utilizados nas novas configurações comerciais.</p>
           <div className="grid sm:grid-cols-3 gap-4 max-w-xl">
             <div>
               <Label>Desconto Publicidade (%)</Label>
@@ -1157,7 +1199,7 @@ const SettingsTab = () => {
               <li>Recomendação especial DrOnline</li>
             </ul>
           </div>
-          <Button onClick={handleSavePremium} className="bg-primary text-primary-foreground rounded-xl"><CheckCircle className="w-4 h-4 mr-1.5" /> Guardar Benefícios</Button>
+          <Button onClick={handleSavePremium} disabled={updateSettings.isPending} className="bg-primary text-primary-foreground rounded-xl"><CheckCircle className="w-4 h-4 mr-1.5" /> Guardar Benefícios</Button>
         </CardContent>
       </Card>
     </div>
