@@ -97,7 +97,7 @@ const formatPrice = (p: number) => new Intl.NumberFormat("pt-MZ", { style: "curr
 /* ─── Dashboard ─── */
 const DashboardTab = () => {
   const { products, suppliers, orders, adCampaigns } = useStore();
-  const totalRevenue = orders.filter((o) => o.status !== "cancelled").reduce((s, o) => s + o.total, 0);
+  const totalRevenue = orders.filter((o) => ["payment-verified", "shipped", "delivered"].includes(o.status)).reduce((s, o) => s + o.total, 0);
   const adRevenue = adCampaigns.reduce((s, a) => s + a.realizedRevenue, 0);
   const pendingOrders = orders.filter((o) => o.status === "pending" || o.status === "payment-submitted").length;
   const lowStock = products.filter((p) => p.stock < 10).length;
