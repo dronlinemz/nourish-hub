@@ -114,7 +114,15 @@ export type Database = {
           total?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["order_id"]
+          },
+        ]
       }
       products: {
         Row: {
@@ -285,6 +293,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_guest_order: {
+        Args: {
+          p_items: Json
+          p_order: Json
+        }
+        Returns: string
+      }
+      admin_update_order_status: {
+        Args: {
+          p_order_id: string
+          p_status: Database["public"]["Enums"]["order_status"]
+        }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
