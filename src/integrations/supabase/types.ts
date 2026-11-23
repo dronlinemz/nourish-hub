@@ -206,6 +206,10 @@ export type Database = {
       }
       store_settings: {
         Row: {
+          bank_account: string
+          bank_account_holder: string
+          bank_name: string
+          bank_nib: string
           delivery_fee_maputo: number
           delivery_fee_matola: number
           id: string
@@ -215,6 +219,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bank_account?: string
+          bank_account_holder?: string
+          bank_name?: string
+          bank_nib?: string
           delivery_fee_maputo?: number
           delivery_fee_matola?: number
           id?: string
