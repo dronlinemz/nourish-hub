@@ -21,6 +21,7 @@ import type { Product, Supplier, Category, Order, OrderStatus, AdCampaign, AdSpa
 import { toast } from "sonner";
 import { generatePartnerRevenueReport, generateAdRevenueReport, openReport } from "@/utils/reports";
 import { downloadInvoice } from "@/utils/invoice";
+import { getPaymentProofSignedUrl, useUpdateOrderStatus } from "@/hooks/useOrders";
 
 type Tab = "dashboard" | "products" | "suppliers" | "orders" | "ads" | "reports" | "settings";
 
@@ -518,7 +519,30 @@ const ORDER_PHASES: { status: OrderStatus; label: string; color: string }[] = [
 ];
 
 const OrdersTab = () => {
-  const { orders, updateOrderStatus } = useStore();
+  const { orders } = useStore();
+  const updateOrder = useUpdateOrderStatus();
+  const [openingProof, setOpeningProof] = useState<string | null>(null);
+
+  const handleStatusChange = async (orderId: string, status: OrderStatus) => {
+    try {
+      await updateOrder.mutateAsync({ orderId, status });
+      toast.success(`Estado alterado para: ${ORDER_STATUS_LABELS[status]}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível actualizar a encomenda.");
+    }
+  };
+
+  const handleOpenProof = async (path: string) => {
+    setOpeningProof(path);
+    try {
+      const url = await getPaymentProofSignedUrl(path);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível abrir o comprovativo.");
+    } finally {
+      setOpeningProof(null);
+    }
+  };
   const [activePhase, setActivePhase] = useState<OrderStatus | "all">("all");
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month" | "year">("all");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "mpesa" | "bank-transfer">("all");
@@ -630,7 +654,7 @@ const OrdersTab = () => {
                   <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                     <span>Pagamento: {o.paymentMethod === "mpesa" ? "M-Pesa" : "Transferência Bancária"}</span>
                     <div className="flex items-center gap-3">
-                      {o.paymentProofUrl && <a href={o.paymentProofUrl} target="_blank" rel="noreferrer" className="text-primary font-medium hover:underline flex items-center gap-1"><Eye className="w-3 h-3" /> Comprovativo</a>}
+                      {o.paymentProofUrl && <button type="button" disabled={openingProof === o.paymentProofUrl} onClick={() => handleOpenProof(o.paymentProofUrl!)} className="text-primary font-medium hover:underline flex items-center gap-1 disabled:opacity-50"><Eye className="w-3 h-3" /> {openingProof === o.paymentProofUrl ? "A abrir..." : "Comprovativo"}</button>}
                       {(o.status !== "pending" && o.status !== "cancelled") && (
                         <button onClick={() => downloadInvoice(o)} className="text-primary font-medium hover:underline flex items-center gap-1"><Download className="w-3 h-3" /> Factura</button>
                       )}
@@ -652,7 +676,7 @@ const OrdersTab = () => {
                 {statusActions[o.status] && (
                   <div className="flex gap-2 pt-3 border-t border-border">
                     {statusActions[o.status].map((action) => (
-                      <Button key={action.next} variant={action.variant} size="sm" className="rounded-xl" onClick={() => { updateOrderStatus(o.id, action.next); toast.success(`Estado alterado para: ${ORDER_STATUS_LABELS[action.next]}`); }}>
+                      <Button key={action.next} variant={action.variant} size="sm" className="rounded-xl" onClick={() => handleStatusChange(o.id, action.next)} disabled={updateOrder.isPending}>
                         {action.icon}<span className="ml-1.5">{action.label}</span>
                       </Button>
                     ))}
