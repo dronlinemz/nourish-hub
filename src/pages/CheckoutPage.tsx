@@ -18,7 +18,8 @@ import { useCreateOrder } from "@/hooks/useOrders";
 
 const CheckoutPage = () => {
   const { items, total: subtotalRaw, clearCart, deliveryZone, setDeliveryZone } = useCart();
-  const { deliveryFees } = useStore();
+  const { deliveryFees, bankDetails } = useStore();
+  const bankTransferReady = Boolean(bankDetails.bankName && bankDetails.account && bankDetails.nib && bankDetails.accountHolder);
   const createOrder = useCreateOrder();
   const navigate = useNavigate();
 
@@ -78,6 +79,10 @@ const CheckoutPage = () => {
     e.preventDefault();
     if (!form.name || !form.phone || !form.address) {
       toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+    if (paymentMethod === "bank-transfer" && !bankTransferReady) {
+      toast.error("A transferência bancária ainda não está configurada. Escolha M-Pesa ou contacte o suporte.");
       return;
     }
     if (paymentMethod === "bank-transfer" && !proofFile) {
@@ -164,11 +169,11 @@ const CheckoutPage = () => {
                     <p className="font-display font-semibold text-sm">M-Pesa</p>
                     <p className="text-xs text-muted-foreground">Pagamento instantâneo via M-Pesa</p>
                   </button>
-                  <button type="button" onClick={() => setPaymentMethod("bank-transfer")}
-                    className={`p-4 rounded-xl border-2 text-left transition-colors ${paymentMethod === "bank-transfer" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
+                  <button type="button" disabled={!bankTransferReady} onClick={() => setPaymentMethod("bank-transfer")}
+                    className={`p-4 rounded-xl border-2 text-left transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${paymentMethod === "bank-transfer" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
                     <Building2 className="w-5 h-5 text-secondary mb-2" />
                     <p className="font-display font-semibold text-sm">Transferência Bancária</p>
-                    <p className="text-xs text-muted-foreground">Envie o comprovativo após transferência</p>
+                    <p className="text-xs text-muted-foreground">{bankTransferReady ? "Envie o comprovativo após transferência" : "Indisponível: dados bancários por configurar"}</p>
                   </button>
                 </div>
 
@@ -186,9 +191,13 @@ const CheckoutPage = () => {
                   <div className="space-y-4">
                     <div className="bg-muted/50 rounded-xl p-4">
                       <p className="text-sm font-medium mb-1">Dados Bancários</p>
-                      <p className="text-sm text-muted-foreground">
-                        Banco: BCI Moçambique<br />Conta: 1234567890<br />NIB: 0008 0000 1234567890 12<br />Titular: DrOnline Lda
-                      </p>
+                      {bankTransferReady ? (
+                        <p className="text-sm text-muted-foreground">
+                          Banco: {bankDetails.bankName}<br />Conta: {bankDetails.account}<br />NIB: {bankDetails.nib}<br />Titular: {bankDetails.accountHolder}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Os dados bancários ainda não foram configurados pela administração. Utilize M-Pesa ou contacte o suporte.</p>
+                      )}
                     </div>
                     <div>
                       <Label>Comprovativo de Pagamento *</Label>
