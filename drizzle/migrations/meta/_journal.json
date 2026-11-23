@@ -8,6 +8,13 @@
       "when": 1795459957905,
       "tag": "0000_restrict_guest_order_access",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795460214419,
+      "tag": "0001_align_guest_order_vat_validation",
+      "breakpoints": true
     }
   ]
 }
