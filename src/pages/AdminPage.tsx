@@ -1178,6 +1178,20 @@ const SettingsTab = () => {
       <div><h1 className="text-2xl md:text-3xl font-display font-bold">Definições</h1><p className="text-sm text-muted-foreground">Configurações gerais do marketplace</p></div>
 
       <Card>
+        <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Building2 className="w-5 h-5 text-primary" /> Dados para Transferência Bancária</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">A transferência bancária só fica disponível no checkout depois de guardar estes dados reais.</p>
+          <div className="grid sm:grid-cols-2 gap-4 max-w-xl">
+            <div><Label>Banco</Label><Input value={bank.bankName} onChange={(e) => setBank({ ...bank, bankName: e.target.value })} className="rounded-xl" /></div>
+            <div><Label>Titular da Conta</Label><Input value={bank.accountHolder} onChange={(e) => setBank({ ...bank, accountHolder: e.target.value })} className="rounded-xl" /></div>
+            <div><Label>Número da Conta</Label><Input value={bank.account} onChange={(e) => setBank({ ...bank, account: e.target.value })} className="rounded-xl" /></div>
+            <div><Label>NIB</Label><Input value={bank.nib} onChange={(e) => setBank({ ...bank, nib: e.target.value })} className="rounded-xl" /></div>
+          </div>
+          <Button onClick={handleSaveBank} disabled={updateSettings.isPending} className="bg-primary text-primary-foreground rounded-xl"><CheckCircle className="w-4 h-4 mr-1.5" /> Guardar Dados Bancários</Button>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Truck className="w-5 h-5 text-primary" /> Taxas de Entrega</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">As taxas são guardadas no servidor e aplicadas no checkout e na validação da encomenda.</p>
