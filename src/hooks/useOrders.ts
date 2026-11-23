@@ -127,3 +127,30 @@ export const useCreateOrder = () => {
     },
   });
 };
+
+
+export const useUpdateOrderStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: string; status: Order["status"] }) => {
+      const { error } = await supabase.rpc("admin_update_order_status", {
+        p_order_id: orderId,
+        p_status: status,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["supplier-products"] });
+    },
+  });
+};
+
+export const getPaymentProofSignedUrl = async (path: string) => {
+  const { data, error } = await supabase.storage
+    .from(PAYMENT_PROOFS_BUCKET)
+    .createSignedUrl(path, 60 * 5);
+  if (error) throw error;
+  return data.signedUrl;
+};
