@@ -11,14 +11,15 @@ const mapOrder = (row: any): Order => ({
     product: {
       id: item.product_id,
       name: item.product_name,
-      description: "",
+      description: item.products?.description ?? "",
       price: Number(item.product_price),
-      image: "",
-      category: "nutricao",
-      supplierId: "",
-      stock: 0,
-      featured: false,
-      createdAt: item.created_at,
+      image: item.products?.image ?? "",
+      category: item.products?.category ?? "nutricao",
+      supplierId: item.products?.supplier_id ?? "",
+      stock: Number(item.products?.stock ?? 0),
+      featured: item.products?.featured ?? false,
+      createdAt: item.products?.created_at ?? item.created_at,
+    }
     },
   })),
   subtotal: Number(row.subtotal),
@@ -43,7 +44,7 @@ export const useOrders = () =>
     queryFn: async (): Promise<Order[]> => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, order_items(*)")
+        .select("*, order_items(*, products(*))")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).map(mapOrder);
