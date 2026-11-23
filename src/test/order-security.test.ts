@@ -41,9 +41,17 @@ describe("order access and checkout integrity", () => {
     expect(atomicCheckoutMigration).toMatch(/FOR UPDATE OF p/);
     expect(atomicCheckoutMigration).toMatch(/v_product\.stock < v_quantity/);
     expect(atomicCheckoutMigration).toMatch(/SET stock = stock - v_quantity/);
+    expect(atomicCheckoutMigration).toMatch(/FROM storage\.objects[\s\S]*?bucket_id = 'nourish-payment-proofs'[\s\S]*?name = p_order->>'payment_proof_url'/);
     expect(atomicCheckoutMigration).toMatch(/REVOKE INSERT ON public\.orders FROM anon, authenticated/);
     expect(atomicCheckoutMigration).toMatch(/REVOKE INSERT ON public\.order_items FROM anon, authenticated/);
     expect(atomicCheckoutMigration).toMatch(/v_subtotal := v_subtotal \+ round\(v_product\.price \* v_quantity, 2\)/);
+  });
+
+  it("persists delivery and premium settings for checkout and administration", () => {
+    expect(atomicCheckoutMigration).toMatch(/CREATE TABLE IF NOT EXISTS public\.store_settings/);
+    expect(atomicCheckoutMigration).toMatch(/delivery_fee_maputo numeric/);
+    expect(atomicCheckoutMigration).toMatch(/bank_account_holder text/);
+    expect(atomicCheckoutMigration).toMatch(/FROM public\.store_settings[\s\S]*?WHERE id = 'default'/);
   });
 
   it("protects supplier approval and applies order transitions on the server", () => {
