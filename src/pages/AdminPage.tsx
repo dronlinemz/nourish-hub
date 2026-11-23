@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useStore } from "@/contexts/StoreContext";
+import { useAdminProductMutations, useAdminSupplierMutations, useAdminOrderMutations } from "@/hooks/useAdminMutations";
 import { CATEGORY_LABELS, ORDER_STATUS_LABELS, AD_SPACE_LABELS, AD_STATUS_LABELS, DELIVERY_ZONE_LABELS } from "@/types/store";
 import type { Product, Supplier, Category, Order, OrderStatus, AdCampaign, AdSpace, AdStatus, DeliveryZone, PremiumSettings } from "@/types/store";
 import { toast } from "sonner";
@@ -167,7 +168,8 @@ const DashboardTab = () => {
 
 /* ─── Products ─── */
 const ProductsTab = () => {
-  const { products, suppliers, setProducts } = useStore();
+  const { products, suppliers } = useStore();
+  const productMutations = useAdminProductMutations();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -207,13 +209,22 @@ const ProductsTab = () => {
   const handleSave = () => {
     if (!form.name || !form.price || !form.category || !form.supplierId) { toast.error("Preencha os campos obrigatórios"); return; }
     const data: Product = { id: editProduct?.id || `prod-${Date.now()}`, name: form.name, description: form.description, price: Number(form.price), originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined, image: form.image || "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=400&fit=crop", category: form.category as Category, supplierId: form.supplierId, stock: Number(form.stock) || 0, featured: form.featured, createdAt: editProduct?.createdAt || new Date().toISOString() };
-    if (editProduct) { setProducts((prev) => prev.map((p) => (p.id === data.id ? data : p))); toast.success("Produto actualizado"); }
-    else { setProducts((prev) => [...prev, data]); toast.success("Produto adicionado"); }
-    setDialogOpen(false);
+    productMutations.save.mutate(data, {
+      onSuccess: () => { toast.success(editProduct ? "Produto actualizado" : "Produto adicionado"); setDialogOpen(false); },
+      onError: (error) => toast.error("Não foi possível guardar o produto: " + error.message),
+    });
   };
 
-  const handleDelete = (id: string) => { setProducts((prev) => prev.filter((p) => p.id !== id)); toast.success("Produto removido"); };
-  const toggleFeatured = (id: string) => { setProducts((prev) => prev.map((p) => p.id === id ? { ...p, featured: !p.featured } : p)); };
+  const handleDelete = (id: string) => productMutations.remove.mutate(id, {
+    onSuccess: () => toast.success("Produto removido"),
+    onError: (error) => toast.error("Não foi possível remover o produto: " + error.message),
+  });
+  const toggleFeatured = (id: string) => {
+    const product = products.find((item) => item.id === id);
+    if (product) productMutations.save.mutate({ ...product, featured: !product.featured }, {
+      onError: (error) => toast.error("Não foi possível actualizar o destaque: " + error.message),
+    });
+  };
 
   const stockBadge = (stock: number) => {
     if (stock === 0) return <Badge variant="destructive" className="text-[10px] gap-1"><XCircle className="w-3 h-3" /> Esgotado</Badge>;
@@ -388,7 +399,8 @@ const ProductsTab = () => {
 
 /* ─── Suppliers ─── */
 const SuppliersTab = () => {
-  const { suppliers, products, setSuppliers, premiumSettings } = useStore();
+  const { suppliers, products, premiumSettings } = useStore();
+  const supplierMutations = useAdminSupplierMutations();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
   const [form, setForm] = useState({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, logo: "", location: "", premiumActive: false, premiumStart: "", premiumEnd: "" });
@@ -406,12 +418,16 @@ const SuppliersTab = () => {
       premium: form.premiumActive ? { active: true, startDate: form.premiumStart, endDate: form.premiumEnd, adDiscount: premiumSettings.adDiscount, prioritySlots: premiumSettings.prioritySlots } : undefined,
       createdAt: editSupplier?.createdAt || new Date().toISOString(),
     };
-    if (editSupplier) { setSuppliers((prev) => prev.map((s) => (s.id === data.id ? data : s))); toast.success("Fornecedor actualizado"); }
-    else { setSuppliers((prev) => [...prev, data]); toast.success("Fornecedor adicionado"); }
-    setDialogOpen(false);
+    supplierMutations.save.mutate(data, {
+      onSuccess: () => { toast.success(editSupplier ? "Fornecedor actualizado" : "Fornecedor adicionado"); setDialogOpen(false); },
+      onError: (error) => toast.error("Não foi possível guardar o fornecedor: " + error.message),
+    });
   };
 
-  const handleDelete = (id: string) => { setSuppliers((prev) => prev.filter((s) => s.id !== id)); toast.success("Fornecedor removido"); };
+  const handleDelete = (id: string) => supplierMutations.remove.mutate(id, {
+    onSuccess: () => toast.success("Fornecedor removido"),
+    onError: (error) => toast.error("Não foi possível remover o fornecedor: " + error.message),
+  });
 
   return (
     <div className="space-y-6">
@@ -518,7 +534,8 @@ const ORDER_PHASES: { status: OrderStatus; label: string; color: string }[] = [
 ];
 
 const OrdersTab = () => {
-  const { orders, updateOrderStatus } = useStore();
+  const { orders } = useStore();
+  const orderMutations = useAdminOrderMutations();
   const [activePhase, setActivePhase] = useState<OrderStatus | "all">("all");
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month" | "year">("all");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "mpesa" | "bank-transfer">("all");
@@ -652,7 +669,7 @@ const OrdersTab = () => {
                 {statusActions[o.status] && (
                   <div className="flex gap-2 pt-3 border-t border-border">
                     {statusActions[o.status].map((action) => (
-                      <Button key={action.next} variant={action.variant} size="sm" className="rounded-xl" onClick={() => { updateOrderStatus(o.id, action.next); toast.success(`Estado alterado para: ${ORDER_STATUS_LABELS[action.next]}`); }}>
+                      <Button key={action.next} variant={action.variant} size="sm" className="rounded-xl" onClick={() => orderMutations.updateStatus.mutate({ orderId: o.id, status: action.next }, { onSuccess: () => toast.success(`Estado alterado para: ${ORDER_STATUS_LABELS[action.next]}`), onError: (error) => toast.error("Não foi possível actualizar a encomenda: " + error.message) })}>
                         {action.icon}<span className="ml-1.5">{action.label}</span>
                       </Button>
                     ))}
