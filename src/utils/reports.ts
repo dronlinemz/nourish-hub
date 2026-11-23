@@ -13,7 +13,7 @@ export const generatePartnerRevenueReport = (
   detailed: boolean,
   filterSupplierId?: string
 ): string => {
-  const validOrders = orders.filter((o) => o.status !== "cancelled");
+  const validOrders = orders.filter((o) => ["payment-verified", "shipped", "delivered"].includes(o.status));
 
   const supplierMap = new Map<string, { name: string; revenue: number; iva: number; orders: Order[] }>();
 

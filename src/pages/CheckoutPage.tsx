@@ -18,7 +18,11 @@ import { useCreateOrder } from "@/hooks/useOrders";
 
 const CheckoutPage = () => {
   const { items, total: subtotalRaw, clearCart, deliveryZone, setDeliveryZone } = useCart();
-  const { deliveryFees } = useStore();
+  const { deliveryFees, bankDetails } = useStore();
+  const bankTransferReady = Boolean(bankDetails.bankName && bankDetails.account && bankDetails.nib && bankDetails.accountHolder);
+  // M-Pesa remains disabled until server credentials and the Vodacom callback are configured.
+  const mpesaAvailable = false;
+  const paymentAvailable = mpesaAvailable || bankTransferReady;
   const createOrder = useCreateOrder();
   const navigate = useNavigate();
 
@@ -42,7 +46,7 @@ const CheckoutPage = () => {
   }
 
   if (submitted && lastOrder) {
-    const canDownloadInvoice = lastOrder.paymentMethod === "bank-transfer" || lastOrder.status !== "pending";
+    const canDownloadInvoice = ["payment-verified", "shipped", "delivered"].includes(lastOrder.status);
     return (
       <div className="min-h-screen flex flex-col">
         <StoreHeader />
@@ -80,6 +84,14 @@ const CheckoutPage = () => {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
+    if (paymentMethod === "mpesa" && !mpesaAvailable) {
+      toast.error("O pagamento M-Pesa ainda está em integração com a Vodacom.");
+      return;
+    }
+    if (paymentMethod === "bank-transfer" && !bankTransferReady) {
+      toast.error("A transferência bancária ainda não está configurada. Escolha M-Pesa ou contacte o suporte.");
+      return;
+    }
     if (paymentMethod === "bank-transfer" && !proofFile) {
       toast.error("Anexe o comprovativo de transferência");
       return;
@@ -99,17 +111,17 @@ const CheckoutPage = () => {
         customerAddress: form.address,
         customerNuit: form.nuit || undefined,
         paymentMethod,
-        paymentProofUrl: proofFile ? URL.createObjectURL(proofFile) : undefined,
+        paymentProofUrl: undefined,
         status: (paymentMethod === "mpesa" ? "pending" : "payment-submitted") as Order["status"],
       };
 
-      const result = await createOrder.mutateAsync({ order: orderData, items: [...items] });
+      const result = await createOrder.mutateAsync({ order: orderData, items: [...items], proofFile });
       clearCart();
       setLastOrder(result);
       setSubmitted(true);
       toast.success("Encomenda submetida com sucesso!");
     } catch (err) {
-      toast.error("Erro ao submeter encomenda. Tente novamente.");
+      toast.error(err instanceof Error ? err.message : "Erro ao submeter encomenda. Tente novamente.");
       console.error(err);
     }
   };
@@ -157,22 +169,23 @@ const CheckoutPage = () => {
               {/* Payment */}
               <Card className="p-6 rounded-xl">
                 <h2 className="font-display font-bold mb-4">Método de Pagamento</h2>
+                {!paymentAvailable && <p className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-muted-foreground">Os meios de pagamento ainda não estão activos. A integração M-Pesa aguarda credenciais e validação da Vodacom; a transferência bancária aguarda os dados oficiais da conta.</p>}
                 <div className="grid sm:grid-cols-2 gap-3 mb-4">
-                  <button type="button" onClick={() => setPaymentMethod("mpesa")}
-                    className={`p-4 rounded-xl border-2 text-left transition-colors ${paymentMethod === "mpesa" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
+                  <button type="button" disabled={!mpesaAvailable} onClick={() => setPaymentMethod("mpesa")}
+                    className={`p-4 rounded-xl border-2 text-left transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${paymentMethod === "mpesa" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
                     <Smartphone className="w-5 h-5 text-primary mb-2" />
                     <p className="font-display font-semibold text-sm">M-Pesa</p>
-                    <p className="text-xs text-muted-foreground">Pagamento instantâneo via M-Pesa</p>
+                    <p className="text-xs text-muted-foreground">{mpesaAvailable ? "Pagamento via M-Pesa" : "Em integração com a Vodacom"}</p>
                   </button>
-                  <button type="button" onClick={() => setPaymentMethod("bank-transfer")}
-                    className={`p-4 rounded-xl border-2 text-left transition-colors ${paymentMethod === "bank-transfer" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
+                  <button type="button" disabled={!bankTransferReady} onClick={() => setPaymentMethod("bank-transfer")}
+                    className={`p-4 rounded-xl border-2 text-left transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${paymentMethod === "bank-transfer" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"}`}>
                     <Building2 className="w-5 h-5 text-secondary mb-2" />
                     <p className="font-display font-semibold text-sm">Transferência Bancária</p>
-                    <p className="text-xs text-muted-foreground">Envie o comprovativo após transferência</p>
+                    <p className="text-xs text-muted-foreground">{bankTransferReady ? "Envie o comprovativo após transferência" : "Indisponível: dados bancários por configurar"}</p>
                   </button>
                 </div>
 
-                {paymentMethod === "mpesa" && (
+                {paymentMethod === "mpesa" && mpesaAvailable && (
                   <div className="bg-primary/5 rounded-xl p-4">
                     <p className="text-sm font-medium mb-1">Instruções M-Pesa</p>
                     <p className="text-sm text-muted-foreground">
@@ -186,9 +199,13 @@ const CheckoutPage = () => {
                   <div className="space-y-4">
                     <div className="bg-muted/50 rounded-xl p-4">
                       <p className="text-sm font-medium mb-1">Dados Bancários</p>
-                      <p className="text-sm text-muted-foreground">
-                        Banco: BCI Moçambique<br />Conta: 1234567890<br />NIB: 0008 0000 1234567890 12<br />Titular: DrOnline Lda
-                      </p>
+                      {bankTransferReady ? (
+                        <p className="text-sm text-muted-foreground">
+                          Banco: {bankDetails.bankName}<br />Conta: {bankDetails.account}<br />NIB: {bankDetails.nib}<br />Titular: {bankDetails.accountHolder}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Os dados bancários ainda não foram configurados pela administração. Utilize M-Pesa ou contacte o suporte.</p>
+                      )}
                     </div>
                     <div>
                       <Label>Comprovativo de Pagamento *</Label>
@@ -229,8 +246,8 @@ const CheckoutPage = () => {
               <div className="border-t border-border pt-3 mb-4">
                 <div className="flex justify-between font-display font-bold text-lg"><span>Total</span><span className="text-primary">{formatPrice(grandTotal)}</span></div>
               </div>
-              <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl">
-                <CreditCard className="w-4 h-4 mr-2" /> Confirmar Encomenda
+              <Button type="submit" disabled={createOrder.isPending || !paymentAvailable || (paymentMethod === "mpesa" && !mpesaAvailable) || (paymentMethod === "bank-transfer" && !bankTransferReady)} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl">
+                <CreditCard className="w-4 h-4 mr-2" /> {createOrder.isPending ? "A submeter..." : "Confirmar Encomenda"}
               </Button>
               <p className="text-[10px] text-muted-foreground text-center mt-3">
                 {paymentMethod === "mpesa" ? "A factura será gerada após confirmação do pagamento M-Pesa" : "Ao confirmar, será gerada uma factura electrónica"}

@@ -196,6 +196,48 @@ export type Database = {
         }
         Relationships: []
       }
+      store_settings: {
+        Row: {
+          bank_account: string
+          bank_account_holder: string
+          bank_name: string
+          bank_nib: string
+          delivery_fee_maputo: number
+          delivery_fee_matola: number
+          id: string
+          premium_ad_discount: number
+          premium_priority_slots: number
+          premium_subscription_months: number
+          updated_at: string
+        }
+        Insert: {
+          bank_account?: string
+          bank_account_holder?: string
+          bank_name?: string
+          bank_nib?: string
+          delivery_fee_maputo?: number
+          delivery_fee_matola?: number
+          id?: string
+          premium_ad_discount?: number
+          premium_priority_slots?: number
+          premium_subscription_months?: number
+          updated_at?: string
+        }
+        Update: {
+          bank_account?: string
+          bank_account_holder?: string
+          bank_name?: string
+          bank_nib?: string
+          delivery_fee_maputo?: number
+          delivery_fee_matola?: number
+          id?: string
+          premium_ad_discount?: number
+          premium_priority_slots?: number
+          premium_subscription_months?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       suppliers: {
         Row: {
           approved: boolean
@@ -285,6 +327,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_guest_order: {
+        Args: {
+          p_items: Json
+          p_order: Json
+        }
+        Returns: string
+      }
+      admin_update_order_status: {
+        Args: {
+          p_order_id: string
+          p_status: Database["public"]["Enums"]["order_status"]
+        }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

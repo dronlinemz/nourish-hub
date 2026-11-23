@@ -159,9 +159,15 @@ const SupplierDashboard = () => {
 
           <TabsContent value="perfil">
             <Card className="max-w-2xl">
+              {supplier?.approved === false && (
+                <div className="mx-6 mt-5 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-muted-foreground">
+                  O perfil está em análise. Os seus produtos permanecem privados até à aprovação da equipa Nourish Hub.
+                </div>
+              )}
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   Dados do fornecedor
+                  {supplier?.approved === false && <Badge variant="secondary" className="text-[10px]">A aguardar aprovação</Badge>}
                   {supplier?.verified && (
                     <Badge variant="secondary" className="gap-1 text-[10px]">
                       <BadgeCheck className="w-3 h-3" /> Verificado

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-  LayoutDashboard, Package, Users, ShoppingBag, ArrowLeft, Plus, Pencil, Trash2,
+  LayoutDashboard, Package, Users, ShoppingBag, ArrowLeft, Plus, Pencil, Trash2, Building2,
   BadgeCheck, CheckCircle, XCircle, Truck, Star, TrendingUp, AlertCircle,
   BarChart3, DollarSign, Eye, Search, Megaphone, Play, Pause, Calendar,
   MousePointerClick, Monitor, FileText, Download, Crown, Settings, Filter, MapPin
@@ -21,6 +21,9 @@ import type { Product, Supplier, Category, Order, OrderStatus, AdCampaign, AdSpa
 import { toast } from "sonner";
 import { generatePartnerRevenueReport, generateAdRevenueReport, openReport } from "@/utils/reports";
 import { downloadInvoice } from "@/utils/invoice";
+import { getPaymentProofSignedUrl, useUpdateOrderStatus } from "@/hooks/useOrders";
+import { useDeleteProduct, useDeleteSupplier, useSaveAdminSupplier, useSaveProduct, useSetProductFeatured } from "@/hooks/useSupplierAccount";
+import { useUpdateStoreSettings } from "@/hooks/useStoreSettings";
 
 type Tab = "dashboard" | "products" | "suppliers" | "orders" | "ads" | "reports" | "settings";
 
@@ -95,7 +98,7 @@ const formatPrice = (p: number) => new Intl.NumberFormat("pt-MZ", { style: "curr
 /* ─── Dashboard ─── */
 const DashboardTab = () => {
   const { products, suppliers, orders, adCampaigns } = useStore();
-  const totalRevenue = orders.filter((o) => o.status !== "cancelled").reduce((s, o) => s + o.total, 0);
+  const totalRevenue = orders.filter((o) => ["payment-verified", "shipped", "delivered"].includes(o.status)).reduce((s, o) => s + o.total, 0);
   const adRevenue = adCampaigns.reduce((s, a) => s + a.realizedRevenue, 0);
   const pendingOrders = orders.filter((o) => o.status === "pending" || o.status === "payment-submitted").length;
   const lowStock = products.filter((p) => p.stock < 10).length;
@@ -167,7 +170,7 @@ const DashboardTab = () => {
 
 /* ─── Products ─── */
 const ProductsTab = () => {
-  const { products, suppliers, setProducts } = useStore();
+  const { products, suppliers } = useStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -177,6 +180,9 @@ const ProductsTab = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
   const [form, setForm] = useState({ name: "", description: "", price: "", originalPrice: "", image: "", category: "" as Category | "", supplierId: "", stock: "", featured: false });
+  const saveProduct = useSaveProduct(form.supplierId);
+  const deleteProduct = useDeleteProduct();
+  const setFeatured = useSetProductFeatured();
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -204,16 +210,52 @@ const ProductsTab = () => {
   const openNew = () => { setEditProduct(null); setForm({ name: "", description: "", price: "", originalPrice: "", image: "", category: "", supplierId: "", stock: "", featured: false }); setDialogOpen(true); };
   const openEdit = (p: Product) => { setEditProduct(p); setForm({ name: p.name, description: p.description, price: String(p.price), originalPrice: p.originalPrice ? String(p.originalPrice) : "", image: p.image, category: p.category, supplierId: p.supplierId, stock: String(p.stock), featured: p.featured }); setDialogOpen(true); };
 
-  const handleSave = () => {
-    if (!form.name || !form.price || !form.category || !form.supplierId) { toast.error("Preencha os campos obrigatórios"); return; }
-    const data: Product = { id: editProduct?.id || `prod-${Date.now()}`, name: form.name, description: form.description, price: Number(form.price), originalPrice: form.originalPrice ? Number(form.originalPrice) : undefined, image: form.image || "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=400&fit=crop", category: form.category as Category, supplierId: form.supplierId, stock: Number(form.stock) || 0, featured: form.featured, createdAt: editProduct?.createdAt || new Date().toISOString() };
-    if (editProduct) { setProducts((prev) => prev.map((p) => (p.id === data.id ? data : p))); toast.success("Produto actualizado"); }
-    else { setProducts((prev) => [...prev, data]); toast.success("Produto adicionado"); }
-    setDialogOpen(false);
+  const handleSave = async () => {
+    const price = Number(form.price);
+    const stock = Number(form.stock);
+    if (!form.name.trim() || !Number.isFinite(price) || price <= 0 || !form.category || !form.supplierId || !Number.isInteger(stock) || stock < 0) {
+      toast.error("Preencha os campos obrigatórios com valores válidos");
+      return;
+    }
+    try {
+      await saveProduct.mutateAsync({
+        id: editProduct?.id,
+        values: {
+          name: form.name.trim(),
+          description: form.description.trim(),
+          price,
+          originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
+          image: form.image.trim(),
+          category: form.category as Category,
+          stock,
+          featured: form.featured,
+        },
+      });
+      toast.success(editProduct ? "Produto actualizado" : "Produto adicionado");
+      setDialogOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível guardar o produto.");
+    }
   };
 
-  const handleDelete = (id: string) => { setProducts((prev) => prev.filter((p) => p.id !== id)); toast.success("Produto removido"); };
-  const toggleFeatured = (id: string) => { setProducts((prev) => prev.map((p) => p.id === id ? { ...p, featured: !p.featured } : p)); };
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteProduct.mutateAsync(id);
+      toast.success("Produto removido");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível remover o produto.");
+    }
+  };
+
+  const toggleFeatured = async (id: string) => {
+    const product = products.find((item) => item.id === id);
+    if (!product) return;
+    try {
+      await setFeatured.mutateAsync({ productId: id, featured: !product.featured });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível alterar o destaque.");
+    }
+  };
 
   const stockBadge = (stock: number) => {
     if (stock === 0) return <Badge variant="destructive" className="text-[10px] gap-1"><XCircle className="w-3 h-3" /> Esgotado</Badge>;
@@ -388,30 +430,53 @@ const ProductsTab = () => {
 
 /* ─── Suppliers ─── */
 const SuppliersTab = () => {
-  const { suppliers, products, setSuppliers, premiumSettings } = useStore();
+  const { suppliers, products, premiumSettings } = useStore();
+  const saveSupplier = useSaveAdminSupplier();
+  const deleteSupplier = useDeleteSupplier();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSupplier, setEditSupplier] = useState<Supplier | null>(null);
-  const [form, setForm] = useState({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, logo: "", location: "", premiumActive: false, premiumStart: "", premiumEnd: "" });
+  const [form, setForm] = useState({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, logo: "", location: "", premiumActive: false, premiumStart: "", premiumEnd: "", approved: true });
 
-  const openNew = () => { setEditSupplier(null); setForm({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, logo: "", location: "", premiumActive: false, premiumStart: "", premiumEnd: "" }); setDialogOpen(true); };
-  const openEdit = (s: Supplier) => { setEditSupplier(s); setForm({ name: s.name, description: s.description, contactEmail: s.contactEmail, contactPhone: s.contactPhone, rating: String(s.rating), verified: s.verified, logo: s.logo || "", location: s.location || "", premiumActive: s.premium?.active || false, premiumStart: s.premium?.startDate || "", premiumEnd: s.premium?.endDate || "" }); setDialogOpen(true); };
+  const openNew = () => { setEditSupplier(null); setForm({ name: "", description: "", contactEmail: "", contactPhone: "", rating: "5", verified: true, logo: "", location: "", premiumActive: false, premiumStart: "", premiumEnd: "", approved: true }); setDialogOpen(true); };
+  const openEdit = (s: Supplier) => { setEditSupplier(s); setForm({ name: s.name, description: s.description, contactEmail: s.contactEmail, contactPhone: s.contactPhone, rating: String(s.rating), verified: s.verified, logo: s.logo || "", location: s.location || "", premiumActive: s.premium?.active || false, premiumStart: s.premium?.startDate || "", premiumEnd: s.premium?.endDate || "", approved: s.approved ?? false }); setDialogOpen(true); };
 
-  const handleSave = () => {
-    if (!form.name || !form.contactEmail) { toast.error("Preencha os campos obrigatórios"); return; }
-    const data: Supplier = {
-      id: editSupplier?.id || `sup-${Date.now()}`, name: form.name, description: form.description,
-      logo: form.logo || undefined, location: form.location || "Maputo",
-      contactEmail: form.contactEmail, contactPhone: form.contactPhone,
-      rating: Number(form.rating), verified: form.verified,
-      premium: form.premiumActive ? { active: true, startDate: form.premiumStart, endDate: form.premiumEnd, adDiscount: premiumSettings.adDiscount, prioritySlots: premiumSettings.prioritySlots } : undefined,
-      createdAt: editSupplier?.createdAt || new Date().toISOString(),
-    };
-    if (editSupplier) { setSuppliers((prev) => prev.map((s) => (s.id === data.id ? data : s))); toast.success("Fornecedor actualizado"); }
-    else { setSuppliers((prev) => [...prev, data]); toast.success("Fornecedor adicionado"); }
-    setDialogOpen(false);
+  const handleSave = async () => {
+    if (!form.name.trim() || !form.contactEmail.trim()) { toast.error("Nome e email são obrigatórios"); return; }
+    try {
+      await saveSupplier.mutateAsync({
+        id: editSupplier?.id,
+        values: {
+          name: form.name.trim(),
+          description: form.description.trim(),
+          contactEmail: form.contactEmail.trim(),
+          contactPhone: form.contactPhone.trim(),
+          location: form.location.trim(),
+          logo: form.logo.trim(),
+          rating: Number(form.rating) || 0,
+          verified: form.verified,
+          approved: form.approved,
+          premiumActive: form.premiumActive,
+          premiumStartDate: form.premiumStart || null,
+          premiumEndDate: form.premiumEnd || null,
+          premiumAdDiscount: premiumSettings.adDiscount,
+          premiumPrioritySlots: premiumSettings.prioritySlots,
+        },
+      });
+      toast.success(editSupplier ? "Fornecedor actualizado" : "Fornecedor criado");
+      setDialogOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível guardar o fornecedor.");
+    }
   };
 
-  const handleDelete = (id: string) => { setSuppliers((prev) => prev.filter((s) => s.id !== id)); toast.success("Fornecedor removido"); };
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteSupplier.mutateAsync(id);
+      toast.success("Fornecedor removido");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível remover o fornecedor.");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -434,6 +499,7 @@ const SuppliersTab = () => {
                 <div><Label>Rating (1-5)</Label><Input type="number" min="1" max="5" step="0.1" value={form.rating} onChange={(e) => setForm({ ...form, rating: e.target.value })} className="rounded-xl" /></div>
                 <div className="flex items-end"><label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.verified} onChange={(e) => setForm({ ...form, verified: e.target.checked })} className="w-4 h-4 rounded" /><span className="text-sm font-medium">Verificado</span></label></div>
               </div>
+              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={form.approved} onChange={(e) => setForm({ ...form, approved: e.target.checked })} className="w-4 h-4 rounded" /><span className="text-sm font-medium">Fornecedor aprovado para publicar produtos</span></label>
               <Separator />
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
@@ -518,7 +584,30 @@ const ORDER_PHASES: { status: OrderStatus; label: string; color: string }[] = [
 ];
 
 const OrdersTab = () => {
-  const { orders, updateOrderStatus } = useStore();
+  const { orders } = useStore();
+  const updateOrder = useUpdateOrderStatus();
+  const [openingProof, setOpeningProof] = useState<string | null>(null);
+
+  const handleStatusChange = async (orderId: string, status: OrderStatus) => {
+    try {
+      await updateOrder.mutateAsync({ orderId, status });
+      toast.success(`Estado alterado para: ${ORDER_STATUS_LABELS[status]}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível actualizar a encomenda.");
+    }
+  };
+
+  const handleOpenProof = async (path: string) => {
+    setOpeningProof(path);
+    try {
+      const url = await getPaymentProofSignedUrl(path);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível abrir o comprovativo.");
+    } finally {
+      setOpeningProof(null);
+    }
+  };
   const [activePhase, setActivePhase] = useState<OrderStatus | "all">("all");
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month" | "year">("all");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "mpesa" | "bank-transfer">("all");
@@ -630,8 +719,8 @@ const OrdersTab = () => {
                   <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                     <span>Pagamento: {o.paymentMethod === "mpesa" ? "M-Pesa" : "Transferência Bancária"}</span>
                     <div className="flex items-center gap-3">
-                      {o.paymentProofUrl && <a href={o.paymentProofUrl} target="_blank" rel="noreferrer" className="text-primary font-medium hover:underline flex items-center gap-1"><Eye className="w-3 h-3" /> Comprovativo</a>}
-                      {(o.status !== "pending" && o.status !== "cancelled") && (
+                      {o.paymentProofUrl && <button type="button" disabled={openingProof === o.paymentProofUrl} onClick={() => handleOpenProof(o.paymentProofUrl!)} className="text-primary font-medium hover:underline flex items-center gap-1 disabled:opacity-50"><Eye className="w-3 h-3" /> {openingProof === o.paymentProofUrl ? "A abrir..." : "Comprovativo"}</button>}
+                      {(["payment-verified", "shipped", "delivered"].includes(o.status)) && (
                         <button onClick={() => downloadInvoice(o)} className="text-primary font-medium hover:underline flex items-center gap-1"><Download className="w-3 h-3" /> Factura</button>
                       )}
                     </div>
@@ -652,7 +741,7 @@ const OrdersTab = () => {
                 {statusActions[o.status] && (
                   <div className="flex gap-2 pt-3 border-t border-border">
                     {statusActions[o.status].map((action) => (
-                      <Button key={action.next} variant={action.variant} size="sm" className="rounded-xl" onClick={() => { updateOrderStatus(o.id, action.next); toast.success(`Estado alterado para: ${ORDER_STATUS_LABELS[action.next]}`); }}>
+                      <Button key={action.next} variant={action.variant} size="sm" className="rounded-xl" onClick={() => handleStatusChange(o.id, action.next)} disabled={updateOrder.isPending}>
                         {action.icon}<span className="ml-1.5">{action.label}</span>
                       </Button>
                     ))}
@@ -999,26 +1088,89 @@ const ReportsTab = () => {
 
 /* ─── Settings (Delivery Fees + Premium) ─── */
 const SettingsTab = () => {
-  const { deliveryFees, setDeliveryFees, premiumSettings, setPremiumSettings } = useStore();
-  const [fees, setFees] = useState({ maputo: String(deliveryFees.maputo), matola: String(deliveryFees.matola) });
+  const { deliveryFees, premiumSettings, bankDetails } = useStore();
+  const updateSettings = useUpdateStoreSettings();
+  const [fees, setFees] = useState({
+    maputo: String(deliveryFees.maputo),
+    matola: String(deliveryFees.matola),
+  });
   const [premium, setPremium] = useState({
     adDiscount: String(Math.round(premiumSettings.adDiscount * 100)),
     prioritySlots: String(premiumSettings.prioritySlots),
     subscriptionMonths: String(premiumSettings.subscriptionMonths),
   });
+  const [bank, setBank] = useState({ bankName: bankDetails.bankName, account: bankDetails.account, nib: bankDetails.nib, accountHolder: bankDetails.accountHolder });
 
-  const handleSaveFees = () => {
-    setDeliveryFees({ maputo: Number(fees.maputo) || 0, matola: Number(fees.matola) || 0 });
-    toast.success("Taxas de entrega actualizadas");
+  useEffect(() => {
+    setFees({ maputo: String(deliveryFees.maputo), matola: String(deliveryFees.matola) });
+  }, [deliveryFees.maputo, deliveryFees.matola]);
+
+  useEffect(() => {
+    setPremium({
+      adDiscount: String(Math.round(premiumSettings.adDiscount * 100)),
+      prioritySlots: String(premiumSettings.prioritySlots),
+      subscriptionMonths: String(premiumSettings.subscriptionMonths),
+    });
+  }, [premiumSettings.adDiscount, premiumSettings.prioritySlots, premiumSettings.subscriptionMonths]);
+
+  useEffect(() => {
+    setBank({ bankName: bankDetails.bankName, account: bankDetails.account, nib: bankDetails.nib, accountHolder: bankDetails.accountHolder });
+  }, [bankDetails.bankName, bankDetails.account, bankDetails.nib, bankDetails.accountHolder]);
+
+  const handleSaveFees = async () => {
+    const maputo = Number(fees.maputo);
+    const matola = Number(fees.matola);
+    if (!Number.isFinite(maputo) || maputo < 0 || !Number.isFinite(matola) || matola < 0) {
+      toast.error("Indique taxas de entrega válidas.");
+      return;
+    }
+    try {
+      await updateSettings.mutateAsync({
+        deliveryFees: { maputo, matola },
+        premiumSettings,
+        bankDetails,
+      });
+      toast.success("Taxas de entrega guardadas.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível guardar as taxas.");
+    }
   };
 
-  const handleSavePremium = () => {
-    setPremiumSettings({
-      adDiscount: (Number(premium.adDiscount) || 15) / 100,
-      prioritySlots: Number(premium.prioritySlots) || 2,
-      subscriptionMonths: Number(premium.subscriptionMonths) || 6,
-    });
-    toast.success("Benefícios Premium actualizados");
+  const handleSavePremium = async () => {
+    const adDiscount = Number(premium.adDiscount);
+    const prioritySlots = Number(premium.prioritySlots);
+    const subscriptionMonths = Number(premium.subscriptionMonths);
+    if (!Number.isFinite(adDiscount) || adDiscount < 0 || adDiscount > 100
+      || !Number.isInteger(prioritySlots) || prioritySlots < 0 || prioritySlots > 10
+      || !Number.isInteger(subscriptionMonths) || subscriptionMonths < 1 || subscriptionMonths > 24) {
+      toast.error("Verifique os limites dos benefícios Premium.");
+      return;
+    }
+    try {
+      await updateSettings.mutateAsync({
+        deliveryFees,
+        premiumSettings: { adDiscount: adDiscount / 100, prioritySlots, subscriptionMonths },
+        bankDetails,
+      });
+      toast.success("Benefícios Premium guardados.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível guardar os benefícios.");
+    }
+  };
+
+  const handleSaveBank = async () => {
+    if (!bank.bankName.trim() || !bank.account.trim() || !bank.nib.trim() || !bank.accountHolder.trim()) {
+      toast.error("Preencha todos os dados bancários para activar a transferência.");
+      return;
+    }
+    try {
+      await updateSettings.mutateAsync({ deliveryFees, premiumSettings, bankDetails: {
+        bankName: bank.bankName.trim(), account: bank.account.trim(), nib: bank.nib.trim(), accountHolder: bank.accountHolder.trim(),
+      } });
+      toast.success("Dados bancários guardados.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível guardar os dados bancários.");
+    }
   };
 
   return (
@@ -1026,25 +1178,39 @@ const SettingsTab = () => {
       <div><h1 className="text-2xl md:text-3xl font-display font-bold">Definições</h1><p className="text-sm text-muted-foreground">Configurações gerais do marketplace</p></div>
 
       <Card>
+        <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Building2 className="w-5 h-5 text-primary" /> Dados para Transferência Bancária</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">A transferência bancária só fica disponível no checkout depois de guardar estes dados reais.</p>
+          <div className="grid sm:grid-cols-2 gap-4 max-w-xl">
+            <div><Label>Banco</Label><Input value={bank.bankName} onChange={(e) => setBank({ ...bank, bankName: e.target.value })} className="rounded-xl" /></div>
+            <div><Label>Titular da Conta</Label><Input value={bank.accountHolder} onChange={(e) => setBank({ ...bank, accountHolder: e.target.value })} className="rounded-xl" /></div>
+            <div><Label>Número da Conta</Label><Input value={bank.account} onChange={(e) => setBank({ ...bank, account: e.target.value })} className="rounded-xl" /></div>
+            <div><Label>NIB</Label><Input value={bank.nib} onChange={(e) => setBank({ ...bank, nib: e.target.value })} className="rounded-xl" /></div>
+          </div>
+          <Button onClick={handleSaveBank} disabled={updateSettings.isPending} className="bg-primary text-primary-foreground rounded-xl"><CheckCircle className="w-4 h-4 mr-1.5" /> Guardar Dados Bancários</Button>
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Truck className="w-5 h-5 text-primary" /> Taxas de Entrega</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">Defina as taxas de entrega para cada zona. Os valores serão aplicados automaticamente no checkout.</p>
+          <p className="text-sm text-muted-foreground">As taxas são guardadas no servidor e aplicadas no checkout e na validação da encomenda.</p>
           <div className="grid sm:grid-cols-2 gap-4 max-w-md">
             {(Object.entries(DELIVERY_ZONE_LABELS) as [DeliveryZone, string][]).map(([zone, label]) => (
               <div key={zone}>
                 <Label>{label} (MZN)</Label>
-                <Input type="number" value={fees[zone]} onChange={(e) => setFees({ ...fees, [zone]: e.target.value })} className="rounded-xl" />
+                <Input type="number" min="0" step="0.01" value={fees[zone]} onChange={(e) => setFees({ ...fees, [zone]: e.target.value })} className="rounded-xl" />
               </div>
             ))}
           </div>
-          <Button onClick={handleSaveFees} className="bg-primary text-primary-foreground rounded-xl"><CheckCircle className="w-4 h-4 mr-1.5" /> Guardar Taxas</Button>
+          <Button onClick={handleSaveFees} disabled={updateSettings.isPending} className="bg-primary text-primary-foreground rounded-xl"><CheckCircle className="w-4 h-4 mr-1.5" /> Guardar Taxas</Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Crown className="w-5 h-5 text-amber-500" /> Programa Premium — Benefícios</CardTitle></CardHeader>
         <CardContent className="space-y-5">
-          <p className="text-sm text-muted-foreground">Configure os benefícios do pacote Premium. As alterações serão aplicadas a todas as novas subscrições e reflectidas no marketplace.</p>
+          <p className="text-sm text-muted-foreground">Os benefícios são persistidos e utilizados nas novas configurações comerciais.</p>
           <div className="grid sm:grid-cols-3 gap-4 max-w-xl">
             <div>
               <Label>Desconto Publicidade (%)</Label>
@@ -1069,7 +1235,7 @@ const SettingsTab = () => {
               <li>Recomendação especial DrOnline</li>
             </ul>
           </div>
-          <Button onClick={handleSavePremium} className="bg-primary text-primary-foreground rounded-xl"><CheckCircle className="w-4 h-4 mr-1.5" /> Guardar Benefícios</Button>
+          <Button onClick={handleSavePremium} disabled={updateSettings.isPending} className="bg-primary text-primary-foreground rounded-xl"><CheckCircle className="w-4 h-4 mr-1.5" /> Guardar Benefícios</Button>
         </CardContent>
       </Card>
     </div>

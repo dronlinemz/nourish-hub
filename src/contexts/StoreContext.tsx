@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useState, useMemo } from "react";
+import React, { createContext, useContext, useState } from "react";
 import type { Product, Supplier, Order, AdCampaign, DeliveryZone, PremiumSettings } from "@/types/store";
 import { DELIVERY_FEES as DEFAULT_DELIVERY_FEES } from "@/types/store";
 import { useProducts } from "@/hooks/useProducts";
 import { useSuppliers } from "@/hooks/useSuppliers";
 import { useOrders } from "@/hooks/useOrders";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
 
 const DEFAULT_PREMIUM_SETTINGS: PremiumSettings = {
   adDiscount: 0.15,
@@ -49,13 +50,12 @@ interface StoreContextType {
   adCampaigns: AdCampaign[];
   deliveryFees: Record<DeliveryZone, number>;
   premiumSettings: PremiumSettings;
+  bankDetails: { bankName: string; account: string; nib: string; accountHolder: string };
   isLoading: boolean;
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   setAdCampaigns: React.Dispatch<React.SetStateAction<AdCampaign[]>>;
-  setDeliveryFees: React.Dispatch<React.SetStateAction<Record<DeliveryZone, number>>>;
-  setPremiumSettings: React.Dispatch<React.SetStateAction<PremiumSettings>>;
   getSupplier: (id: string) => Supplier | undefined;
   addOrder: (order: Order) => void;
   updateOrderStatus: (orderId: string, status: Order["status"]) => void;
@@ -67,19 +67,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const { data: dbProducts, isLoading: loadingProducts } = useProducts();
   const { data: dbSuppliers, isLoading: loadingSuppliers } = useSuppliers();
   const { data: dbOrders, isLoading: loadingOrders } = useOrders();
+  const { data: dbSettings, isLoading: loadingSettings } = useStoreSettings();
 
   // Local state fallbacks for admin mutations (ads, fees, etc. still local)
   const [localProducts, setProducts] = useState<Product[]>([]);
   const [localSuppliers, setSuppliers] = useState<Supplier[]>([]);
   const [localOrders, setLocalOrders] = useState<Order[]>([]);
   const [adCampaigns, setAdCampaigns] = useState<AdCampaign[]>(MOCK_ADS);
-  const [deliveryFees, setDeliveryFees] = useState<Record<DeliveryZone, number>>(DEFAULT_DELIVERY_FEES);
-  const [premiumSettings, setPremiumSettings] = useState<PremiumSettings>(DEFAULT_PREMIUM_SETTINGS);
 
   const products = dbProducts ?? localProducts;
   const suppliers = dbSuppliers ?? localSuppliers;
   const orders = dbOrders ?? localOrders;
-  const isLoading = loadingProducts || loadingSuppliers;
+  const deliveryFees = dbSettings?.deliveryFees ?? DEFAULT_DELIVERY_FEES;
+  const premiumSettings = dbSettings?.premiumSettings ?? DEFAULT_PREMIUM_SETTINGS;
+  const bankDetails = dbSettings?.bankDetails ?? { bankName: "", account: "", nib: "", accountHolder: "" };
+  const isLoading = loadingProducts || loadingSuppliers || loadingSettings;
 
   const getSupplier = (id: string) => suppliers.find((s) => s.id === id);
   const addOrder = (order: Order) => setLocalOrders((prev) => [order, ...prev]);
@@ -90,9 +92,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <StoreContext.Provider
       value={{
-        products, suppliers, orders, adCampaigns, deliveryFees, premiumSettings, isLoading,
-        setProducts, setSuppliers, setOrders: setLocalOrders, setAdCampaigns, setDeliveryFees,
-        setPremiumSettings, getSupplier, addOrder, updateOrderStatus,
+        products, suppliers, orders, adCampaigns, deliveryFees, premiumSettings, bankDetails, isLoading,
+        setProducts, setSuppliers, setOrders: setLocalOrders, setAdCampaigns,
+        getSupplier, addOrder, updateOrderStatus,
       }}
     >
       {children}

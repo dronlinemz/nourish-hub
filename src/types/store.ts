@@ -14,6 +14,7 @@ export interface Supplier {
   location: string;
   rating: number;
   verified: boolean;
+  approved?: boolean;
   contactEmail: string;
   contactPhone: string;
   premium?: PremiumSubscription;

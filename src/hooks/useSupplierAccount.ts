@@ -30,6 +30,7 @@ export const useMySupplier = (userId?: string) =>
         location: data.location,
         rating: Number(data.rating),
         verified: data.verified,
+        approved: data.approved,
         contactEmail: data.contact_email,
         contactPhone: data.contact_phone,
         logo: data.logo ?? undefined,
@@ -105,6 +106,7 @@ export interface ProductFormValues {
   image: string;
   category: Product["category"];
   stock: number;
+  featured?: boolean;
 }
 
 export const useSaveProduct = (supplierId?: string) => {
@@ -119,6 +121,7 @@ export const useSaveProduct = (supplierId?: string) => {
         image: values.image,
         category: values.category,
         stock: values.stock,
+        featured: values.featured ?? false,
         supplier_id: supplierId!,
       };
       if (id) {
@@ -146,6 +149,82 @@ export const useDeleteProduct = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["supplier-products"] });
       qc.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
+};
+
+
+export interface AdminSupplierValues extends SupplierFormValues {
+  rating: number;
+  verified: boolean;
+  approved: boolean;
+  premiumActive: boolean;
+  premiumStartDate?: string | null;
+  premiumEndDate?: string | null;
+  premiumAdDiscount?: number;
+  premiumPrioritySlots?: number;
+}
+
+export const useSaveAdminSupplier = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, values }: { id?: string; values: AdminSupplierValues }) => {
+      const payload = {
+        name: values.name,
+        description: values.description,
+        location: values.location,
+        contact_email: values.contactEmail,
+        contact_phone: values.contactPhone,
+        logo: values.logo || null,
+        rating: values.rating,
+        verified: values.verified,
+        approved: values.approved,
+        premium_active: values.premiumActive,
+        premium_start_date: values.premiumStartDate || null,
+        premium_end_date: values.premiumEndDate || null,
+        premium_ad_discount: values.premiumAdDiscount ?? 0.15,
+        premium_priority_slots: values.premiumPrioritySlots ?? 2,
+      };
+      if (id) {
+        const { error } = await supabase.from("suppliers").update(payload).eq("id", id);
+        if (error) throw error;
+        return id;
+      }
+      const { data, error } = await supabase.from("suppliers").insert(payload).select("id").single();
+      if (error) throw error;
+      return data.id;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["suppliers"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
+};
+
+export const useDeleteSupplier = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("suppliers").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["suppliers"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
+};
+
+export const useSetProductFeatured = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ productId, featured }: { productId: string; featured: boolean }) => {
+      const { error } = await supabase.from("products").update({ featured }).eq("id", productId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["supplier-products"] });
     },
   });
 };
