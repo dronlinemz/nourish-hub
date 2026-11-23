@@ -1088,7 +1088,7 @@ const ReportsTab = () => {
 
 /* ─── Settings (Delivery Fees + Premium) ─── */
 const SettingsTab = () => {
-  const { deliveryFees, premiumSettings } = useStore();
+  const { deliveryFees, premiumSettings, bankDetails } = useStore();
   const updateSettings = useUpdateStoreSettings();
   const [fees, setFees] = useState({
     maputo: String(deliveryFees.maputo),
@@ -1099,6 +1099,7 @@ const SettingsTab = () => {
     prioritySlots: String(premiumSettings.prioritySlots),
     subscriptionMonths: String(premiumSettings.subscriptionMonths),
   });
+  const [bank, setBank] = useState({ bankName: bankDetails.bankName, account: bankDetails.account, nib: bankDetails.nib, accountHolder: bankDetails.accountHolder });
 
   useEffect(() => {
     setFees({ maputo: String(deliveryFees.maputo), matola: String(deliveryFees.matola) });
@@ -1112,6 +1113,10 @@ const SettingsTab = () => {
     });
   }, [premiumSettings.adDiscount, premiumSettings.prioritySlots, premiumSettings.subscriptionMonths]);
 
+  useEffect(() => {
+    setBank({ bankName: bankDetails.bankName, account: bankDetails.account, nib: bankDetails.nib, accountHolder: bankDetails.accountHolder });
+  }, [bankDetails.bankName, bankDetails.account, bankDetails.nib, bankDetails.accountHolder]);
+
   const handleSaveFees = async () => {
     const maputo = Number(fees.maputo);
     const matola = Number(fees.matola);
@@ -1123,6 +1128,7 @@ const SettingsTab = () => {
       await updateSettings.mutateAsync({
         deliveryFees: { maputo, matola },
         premiumSettings,
+        bankDetails,
       });
       toast.success("Taxas de entrega guardadas.");
     } catch (error) {
@@ -1144,10 +1150,26 @@ const SettingsTab = () => {
       await updateSettings.mutateAsync({
         deliveryFees,
         premiumSettings: { adDiscount: adDiscount / 100, prioritySlots, subscriptionMonths },
+        bankDetails,
       });
       toast.success("Benefícios Premium guardados.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível guardar os benefícios.");
+    }
+  };
+
+  const handleSaveBank = async () => {
+    if (!bank.bankName.trim() || !bank.account.trim() || !bank.nib.trim() || !bank.accountHolder.trim()) {
+      toast.error("Preencha todos os dados bancários para activar a transferência.");
+      return;
+    }
+    try {
+      await updateSettings.mutateAsync({ deliveryFees, premiumSettings, bankDetails: {
+        bankName: bank.bankName.trim(), account: bank.account.trim(), nib: bank.nib.trim(), accountHolder: bank.accountHolder.trim(),
+      } });
+      toast.success("Dados bancários guardados.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível guardar os dados bancários.");
     }
   };
 
