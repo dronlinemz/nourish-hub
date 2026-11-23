@@ -204,6 +204,36 @@ export type Database = {
         }
         Relationships: []
       }
+      store_settings: {
+        Row: {
+          delivery_fee_maputo: number
+          delivery_fee_matola: number
+          id: string
+          premium_ad_discount: number
+          premium_priority_slots: number
+          premium_subscription_months: number
+          updated_at: string
+        }
+        Insert: {
+          delivery_fee_maputo?: number
+          delivery_fee_matola?: number
+          id?: string
+          premium_ad_discount?: number
+          premium_priority_slots?: number
+          premium_subscription_months?: number
+          updated_at?: string
+        }
+        Update: {
+          delivery_fee_maputo?: number
+          delivery_fee_matola?: number
+          id?: string
+          premium_ad_discount?: number
+          premium_priority_slots?: number
+          premium_subscription_months?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       suppliers: {
         Row: {
           approved: boolean
