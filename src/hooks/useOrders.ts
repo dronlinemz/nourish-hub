@@ -45,10 +45,14 @@ export const useCreateOrder = () => {
 
   return useMutation({
     mutationFn: async ({ order, items }: CreateOrderInput): Promise<Order> => {
+      const orderId = crypto.randomUUID();
+      const createdAt = new Date().toISOString();
+
       // Insert order
-      const { data: orderRow, error: orderError } = await supabase
+      const { error: orderError } = await supabase
         .from("orders")
         .insert({
+          id: orderId,
           customer_name: order.customerName,
           customer_email: order.customerEmail,
           customer_phone: order.customerPhone,
@@ -62,15 +66,13 @@ export const useCreateOrder = () => {
           delivery_fee: order.deliveryFee,
           total: order.total,
           status: order.status,
-        })
-        .select()
-        .single();
+        });
 
       if (orderError) throw orderError;
 
       // Insert order items
       const orderItems = items.map((item) => ({
-        order_id: orderRow.id,
+        order_id: orderId,
         product_id: item.product.id,
         product_name: item.product.name,
         product_price: item.product.price,
@@ -83,7 +85,7 @@ export const useCreateOrder = () => {
 
       if (itemsError) throw itemsError;
 
-      return mapOrder(orderRow, items);
+      return { ...order, id: orderId, createdAt };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
