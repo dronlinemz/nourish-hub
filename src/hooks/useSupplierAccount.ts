@@ -30,6 +30,7 @@ export const useMySupplier = (userId?: string) =>
         location: data.location,
         rating: Number(data.rating),
         verified: data.verified,
+        approved: data.approved,
         contactEmail: data.contact_email,
         contactPhone: data.contact_phone,
         logo: data.logo ?? undefined,
