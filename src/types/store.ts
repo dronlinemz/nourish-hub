@@ -75,6 +75,8 @@ export const DELIVERY_ZONE_LABELS: Record<DeliveryZone, string> = {
 };
 
 export const IVA_RATE = 0.16;
+export const calculateIva = (subtotal: number) =>
+  Math.round((subtotal * IVA_RATE + Number.EPSILON) * 100) / 100;
 
 export type OrderStatus = "pending" | "payment-submitted" | "payment-verified" | "shipped" | "delivered" | "cancelled";
 

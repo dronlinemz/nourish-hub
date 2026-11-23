@@ -10,7 +10,7 @@ import StoreHeader from "@/components/StoreHeader";
 import StoreFooter from "@/components/StoreFooter";
 import { useCart } from "@/contexts/CartContext";
 import { useStore } from "@/contexts/StoreContext";
-import { IVA_RATE, DELIVERY_ZONE_LABELS } from "@/types/store";
+import { calculateIva, DELIVERY_ZONE_LABELS } from "@/types/store";
 import type { PaymentMethod, DeliveryZone, Order } from "@/types/store";
 import { toast } from "sonner";
 import { downloadInvoice } from "@/utils/invoice";
@@ -32,7 +32,7 @@ const CheckoutPage = () => {
     new Intl.NumberFormat("pt-MZ", { style: "currency", currency: "MZN" }).format(price);
 
   const subtotal = subtotalRaw;
-  const iva = subtotal * IVA_RATE;
+  const iva = calculateIva(subtotal);
   const deliveryFee = deliveryFees[deliveryZone];
   const grandTotal = subtotal + iva + deliveryFee;
 

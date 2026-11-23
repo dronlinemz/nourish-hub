@@ -7,7 +7,7 @@ import StoreFooter from "@/components/StoreFooter";
 import { useCart } from "@/contexts/CartContext";
 import { useStore } from "@/contexts/StoreContext";
 import PartnerBanner from "@/components/PartnerBanner";
-import { IVA_RATE, DELIVERY_ZONE_LABELS } from "@/types/store";
+import { calculateIva, DELIVERY_ZONE_LABELS } from "@/types/store";
 import type { DeliveryZone } from "@/types/store";
 
 const CartPage = () => {
@@ -41,6 +41,8 @@ const CartPage = () => {
   }
 
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
+  const iva = calculateIva(total);
+  const grandTotal = total + iva + deliveryFees[deliveryZone];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -117,7 +119,7 @@ const CartPage = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">IVA (16%)</span>
-                  <span className="font-medium">{formatPrice(total * IVA_RATE)}</span>
+                  <span className="font-medium">{formatPrice(iva)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Entrega ({DELIVERY_ZONE_LABELS[deliveryZone]})</span>
@@ -127,7 +129,7 @@ const CartPage = () => {
               <div className="border-t border-border pt-4 mb-5">
                 <div className="flex justify-between font-display font-bold text-lg">
                   <span>Total</span>
-                  <span className="text-primary">{formatPrice(total + total * IVA_RATE + deliveryFees[deliveryZone])}</span>
+                  <span className="text-primary">{formatPrice(grandTotal)}</span>
                 </div>
               </div>
               <Link to="/checkout">
