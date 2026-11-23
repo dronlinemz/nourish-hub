@@ -42,7 +42,7 @@ const CheckoutPage = () => {
   }
 
   if (submitted && lastOrder) {
-    const canDownloadInvoice = lastOrder.paymentMethod === "bank-transfer" || lastOrder.status !== "pending";
+    const canDownloadInvoice = ["payment-verified", "shipped", "delivered"].includes(lastOrder.status);
     return (
       <div className="min-h-screen flex flex-col">
         <StoreHeader />
