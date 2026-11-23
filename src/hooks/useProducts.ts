@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Product } from "@/types/store";
+import type { Database } from "@/integrations/supabase/types";
 
-const mapProduct = (row: any): Product => ({
+const mapProduct = (row: Database["public"]["Tables"]["products"]["Row"]): Product => ({
   id: row.id,
   name: row.name,
   description: row.description,
