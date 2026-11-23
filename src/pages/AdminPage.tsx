@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-  LayoutDashboard, Package, Users, ShoppingBag, ArrowLeft, Plus, Pencil, Trash2,
+  LayoutDashboard, Package, Users, ShoppingBag, ArrowLeft, Plus, Pencil, Trash2, Building2,
   BadgeCheck, CheckCircle, XCircle, Truck, Star, TrendingUp, AlertCircle,
   BarChart3, DollarSign, Eye, Search, Megaphone, Play, Pause, Calendar,
   MousePointerClick, Monitor, FileText, Download, Crown, Settings, Filter, MapPin
