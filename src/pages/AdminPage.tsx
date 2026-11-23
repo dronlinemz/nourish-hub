@@ -719,7 +719,7 @@ const OrdersTab = () => {
                     <span>Pagamento: {o.paymentMethod === "mpesa" ? "M-Pesa" : "Transferência Bancária"}</span>
                     <div className="flex items-center gap-3">
                       {o.paymentProofUrl && <button type="button" disabled={openingProof === o.paymentProofUrl} onClick={() => handleOpenProof(o.paymentProofUrl!)} className="text-primary font-medium hover:underline flex items-center gap-1 disabled:opacity-50"><Eye className="w-3 h-3" /> {openingProof === o.paymentProofUrl ? "A abrir..." : "Comprovativo"}</button>}
-                      {(o.status !== "pending" && o.status !== "cancelled") && (
+                      {(["payment-verified", "shipped", "delivered"].includes(o.status)) && (
                         <button onClick={() => downloadInvoice(o)} className="text-primary font-medium hover:underline flex items-center gap-1"><Download className="w-3 h-3" /> Factura</button>
                       )}
                     </div>
