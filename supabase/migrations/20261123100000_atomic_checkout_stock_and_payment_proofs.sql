@@ -50,10 +50,13 @@ BEGIN
     WHEN v_payment_method = 'mpesa' THEN 'pending'::public.order_status
     ELSE 'payment-submitted'::public.order_status
   END;
-  v_delivery_fee := CASE v_delivery_zone
-    WHEN 'maputo' THEN 150.00
-    WHEN 'matola' THEN 250.00
-  END;
+  SELECT CASE v_delivery_zone
+    WHEN 'maputo' THEN delivery_fee_maputo
+    WHEN 'matola' THEN delivery_fee_matola
+  END
+  INTO v_delivery_fee
+  FROM public.store_settings
+  WHERE id = 'default';
 
   IF v_delivery_fee IS NULL
      OR (p_order->>'delivery_fee')::numeric <> v_delivery_fee
@@ -320,3 +323,56 @@ DROP TRIGGER IF EXISTS protect_supplier_approval_fields ON public.suppliers;
 CREATE TRIGGER protect_supplier_approval_fields
 BEFORE INSERT OR UPDATE ON public.suppliers
 FOR EACH ROW EXECUTE FUNCTION public.protect_supplier_approval_fields();
+
+
+-- Persist operational delivery and premium settings instead of keeping them
+-- only in the browser's React state.
+CREATE TABLE IF NOT EXISTS public.store_settings (
+  id text PRIMARY KEY DEFAULT 'default' CHECK (id = 'default'),
+  delivery_fee_maputo numeric(10,2) NOT NULL DEFAULT 150 CHECK (delivery_fee_maputo >= 0),
+  delivery_fee_matola numeric(10,2) NOT NULL DEFAULT 250 CHECK (delivery_fee_matola >= 0),
+  premium_ad_discount numeric(3,2) NOT NULL DEFAULT 0.15 CHECK (premium_ad_discount BETWEEN 0 AND 1),
+  premium_priority_slots integer NOT NULL DEFAULT 2 CHECK (premium_priority_slots BETWEEN 0 AND 10),
+  premium_subscription_months integer NOT NULL DEFAULT 6 CHECK (premium_subscription_months BETWEEN 1 AND 24),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+INSERT INTO public.store_settings (id)
+VALUES ('default')
+ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE public.store_settings ENABLE ROW LEVEL SECURITY;
+GRANT SELECT ON public.store_settings TO anon, authenticated;
+GRANT INSERT, UPDATE ON public.store_settings TO authenticated;
+
+DROP POLICY IF EXISTS "Anyone can read store settings" ON public.store_settings;
+CREATE POLICY "Anyone can read store settings"
+ON public.store_settings FOR SELECT TO anon, authenticated
+USING (true);
+
+DROP POLICY IF EXISTS "Admins can update store settings" ON public.store_settings;
+CREATE POLICY "Admins can update store settings"
+ON public.store_settings FOR UPDATE TO authenticated
+USING (public.has_role(auth.uid(), 'admin'::public.app_role))
+WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
+
+DROP POLICY IF EXISTS "Admins can insert store settings" ON public.store_settings;
+CREATE POLICY "Admins can insert store settings"
+ON public.store_settings FOR INSERT TO authenticated
+WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
+
+CREATE OR REPLACE FUNCTION public.update_store_settings_timestamp()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $store_settings_timestamp$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$store_settings_timestamp$;
+
+DROP TRIGGER IF EXISTS update_store_settings_timestamp ON public.store_settings;
+CREATE TRIGGER update_store_settings_timestamp
+BEFORE UPDATE ON public.store_settings
+FOR EACH ROW EXECUTE FUNCTION public.update_store_settings_timestamp();
