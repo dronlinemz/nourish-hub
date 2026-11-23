@@ -2,9 +2,25 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Order, CartItem } from "@/types/store";
 
-const mapOrder = (row: any, items: CartItem[] = []): Order => ({
+const PAYMENT_PROOFS_BUCKET = "nourish-payment-proofs";
+
+const mapOrder = (row: any): Order => ({
   id: row.id,
-  items,
+  items: (row.order_items ?? []).map((item: any) => ({
+    quantity: Number(item.quantity),
+    product: {
+      id: item.product_id,
+      name: item.product_name,
+      description: "",
+      price: Number(item.product_price),
+      image: "",
+      category: "nutricao",
+      supplierId: "",
+      stock: 0,
+      featured: false,
+      createdAt: item.created_at,
+    },
+  })),
   subtotal: Number(row.subtotal),
   iva: Number(row.iva),
   deliveryFee: Number(row.delivery_fee),
@@ -21,74 +37,93 @@ const mapOrder = (row: any, items: CartItem[] = []): Order => ({
   createdAt: row.created_at,
 });
 
-export const useOrders = () => {
-  return useQuery({
+export const useOrders = () =>
+  useQuery({
     queryKey: ["orders"],
     queryFn: async (): Promise<Order[]> => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*")
+        .select("*, order_items(*)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []).map((row) => mapOrder(row));
+      return (data ?? []).map(mapOrder);
     },
   });
-};
 
 interface CreateOrderInput {
   order: Omit<Order, "id" | "createdAt">;
   items: CartItem[];
+  proofFile?: File | null;
 }
 
 export const useCreateOrder = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ order, items }: CreateOrderInput): Promise<Order> => {
-      const orderId = crypto.randomUUID();
-      const createdAt = new Date().toISOString();
+    mutationFn: async ({ order, items, proofFile }: CreateOrderInput): Promise<Order> => {
+      if (!items.length) throw new Error("O carrinho está vazio.");
 
-      // Insert order
-      const { error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          id: orderId,
+      let proofPath: string | null = null;
+      if (order.paymentMethod === "bank-transfer") {
+        if (!proofFile) throw new Error("Anexe o comprovativo de transferência.");
+        const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+        if (!allowedTypes.includes(proofFile.type) || proofFile.size > 5 * 1024 * 1024) {
+          throw new Error("O comprovativo deve ser PDF ou imagem (JPG, PNG, WebP) até 5 MB.");
+        }
+
+        proofPath = `proofs/${crypto.randomUUID()}.${proofFile.type === "application/pdf" ? "pdf" : proofFile.type === "image/png" ? "png" : proofFile.type === "image/webp" ? "webp" : "jpg"}`;
+        const { error: uploadError } = await supabase.storage
+          .from(PAYMENT_PROOFS_BUCKET)
+          .upload(proofPath, proofFile, { contentType: proofFile.type, upsert: false });
+        if (uploadError) throw uploadError;
+      }
+
+      try {
+        const payload = {
           customer_name: order.customerName,
           customer_email: order.customerEmail,
           customer_phone: order.customerPhone,
           customer_address: order.customerAddress,
           customer_nuit: order.customerNuit ?? null,
           payment_method: order.paymentMethod,
-          payment_proof_url: order.paymentProofUrl ?? null,
+          payment_proof_url: proofPath,
           delivery_zone: order.deliveryZone,
+          delivery_fee: order.deliveryFee,
           subtotal: order.subtotal,
           iva: order.iva,
-          delivery_fee: order.deliveryFee,
           total: order.total,
           status: order.status,
+        };
+        const rpcItems = items.map((item) => ({
+          product_id: item.product.id,
+          quantity: item.quantity,
+        }));
+
+        const { data: orderId, error } = await supabase.rpc("create_guest_order", {
+          p_order: payload,
+          p_items: rpcItems,
         });
+        if (error) throw error;
 
-      if (orderError) throw orderError;
-
-      // Insert order items
-      const orderItems = items.map((item) => ({
-        order_id: orderId,
-        product_id: item.product.id,
-        product_name: item.product.name,
-        product_price: item.product.price,
-        quantity: item.quantity,
-      }));
-
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
-
-      if (itemsError) throw itemsError;
-
-      return { ...order, id: orderId, createdAt };
+        const createdAt = new Date().toISOString();
+        return {
+          ...order,
+          id: orderId,
+          createdAt,
+          paymentProofUrl: proofPath ?? undefined,
+          items: [...items],
+        };
+      } catch (error) {
+        if (proofPath) {
+          await supabase.storage.from(PAYMENT_PROOFS_BUCKET).remove([proofPath]);
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["supplier-products"] });
     },
   });
 };
