@@ -185,7 +185,7 @@ const CheckoutPage = () => {
                   </button>
                 </div>
 
-                {paymentMethod === "mpesa" && (
+                {paymentMethod === "mpesa" && mpesaAvailable && (
                   <div className="bg-primary/5 rounded-xl p-4">
                     <p className="text-sm font-medium mb-1">Instruções M-Pesa</p>
                     <p className="text-sm text-muted-foreground">
