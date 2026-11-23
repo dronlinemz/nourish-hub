@@ -170,9 +170,6 @@ const DashboardTab = () => {
 /* ─── Products ─── */
 const ProductsTab = () => {
   const { products, suppliers } = useStore();
-  const saveProduct = useSaveProduct(form.supplierId);
-  const deleteProduct = useDeleteProduct();
-  const setFeatured = useSetProductFeatured();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -182,6 +179,9 @@ const ProductsTab = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
   const [form, setForm] = useState({ name: "", description: "", price: "", originalPrice: "", image: "", category: "" as Category | "", supplierId: "", stock: "", featured: false });
+  const saveProduct = useSaveProduct(form.supplierId);
+  const deleteProduct = useDeleteProduct();
+  const setFeatured = useSetProductFeatured();
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
