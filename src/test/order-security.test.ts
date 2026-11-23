@@ -11,6 +11,12 @@ const vatMigration = readFileSync(
   "utf8",
 );
 
+
+const supabaseOrderMigration = readFileSync(
+  "supabase/migrations/20261123090000_harden_guest_order_access.sql",
+  "utf8",
+);
+
 describe("order access policies", () => {
   it("limits order and item reads to administrators", () => {
     expect(orderMigration).toMatch(
@@ -19,6 +25,13 @@ describe("order access policies", () => {
     expect(orderMigration).toMatch(
       /CREATE POLICY "Admins can view order items"[\s\S]*?FOR SELECT[\s\S]*?TO authenticated[\s\S]*?USING \(public\.has_role\(auth\.uid\(\), 'admin'::public\.app_role\)\)/,
     );
+  });
+
+  it("keeps the deployed Supabase policies aligned with the hardened order rules", () => {
+    expect(supabaseOrderMigration).toMatch(/CREATE POLICY "Admins can view orders"[\\s\\S]*?FOR SELECT[\\s\\S]*?TO authenticated/);
+    expect(supabaseOrderMigration).toMatch(/CREATE POLICY "Admins can view order items"[\\s\\S]*?FOR SELECT[\\s\\S]*?TO authenticated/);
+    expect(supabaseOrderMigration).toMatch(/CREATE POLICY "Guest checkout can insert valid order items"[\\s\\S]*?quantity > 0[\\s\\S]*?p\\.price = product_price/);
+    expect(supabaseOrderMigration).toMatch(/iva = round\\(subtotal \\* 0\\.16, 2\\)/);
   });
 
   it("keeps guest checkout and rounds 16% tax to cents", () => {
