@@ -20,6 +20,7 @@ export interface StoreSettings {
 export interface StoreSettingsInput {
   deliveryFees: Record<DeliveryZone, number>;
   premiumSettings: StoreSettings["premiumSettings"];
+  bankDetails: StoreSettings["bankDetails"];
 }
 
 const DEFAULT_SETTINGS: StoreSettings = {
