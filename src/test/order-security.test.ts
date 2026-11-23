@@ -16,6 +16,10 @@ const supabaseOrderMigration = readFileSync(
   "supabase/migrations/20261123090000_harden_guest_order_access.sql",
   "utf8",
 );
+const atomicCheckoutMigration = readFileSync(
+  "supabase/migrations/20261123100000_atomic_checkout_stock_and_payment_proofs.sql",
+  "utf8",
+);
 
 describe("order access policies", () => {
   it("limits order and item reads to administrators", () => {
@@ -32,6 +36,23 @@ describe("order access policies", () => {
     expect(supabaseOrderMigration).toMatch(/CREATE POLICY "Admins can view order items"[\\s\\S]*?FOR SELECT[\\s\\S]*?TO authenticated/);
     expect(supabaseOrderMigration).toMatch(/CREATE POLICY "Guest checkout can insert valid order items"[\\s\\S]*?quantity > 0[\\s\\S]*?p\\.price = product_price/);
     expect(supabaseOrderMigration).toMatch(/iva = round\\(subtotal \\* 0\\.16, 2\\)/);
+  });
+
+  it("creates orders atomically, validates stock, and reserves inventory", () => {
+    expect(atomicCheckoutMigration).toMatch(/CREATE OR REPLACE FUNCTION public\\.create_guest_order/);
+    expect(atomicCheckoutMigration).toMatch(/FOR UPDATE/);
+    expect(atomicCheckoutMigration).toMatch(/v_product\\.stock < v_quantity/);
+    expect(atomicCheckoutMigration).toMatch(/SET stock = stock - v_quantity/);
+    expect(atomicCheckoutMigration).toMatch(/REVOKE INSERT ON public\\.orders FROM anon, authenticated/);
+    expect(atomicCheckoutMigration).toMatch(/REVOKE INSERT ON public\\.order_items FROM anon, authenticated/);
+  });
+
+  it("protects supplier approval and applies order transitions on the server", () => {
+    expect(atomicCheckoutMigration).toMatch(/BEFORE INSERT OR UPDATE ON public\\.suppliers/);
+    expect(atomicCheckoutMigration).toMatch(/NEW\\.approved IS DISTINCT FROM OLD\\.approved/);
+    expect(atomicCheckoutMigration).toMatch(/public\\.admin_update_order_status/);
+    expect(atomicCheckoutMigration).toMatch(/public\\.has_role\\(\\(select auth\\.uid\\(\\)\\), 'admin'::public\\.app_role\\)/);
+    expect(atomicCheckoutMigration).toMatch(/SET stock = p\\.stock \\+ oi\\.quantity/);
   });
 
   it("keeps guest checkout and rounds 16% tax to cents", () => {
