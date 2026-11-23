@@ -247,13 +247,13 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = public
-AS $
+AS $is_admin$
   SELECT EXISTS (
     SELECT 1 FROM public.user_roles
     WHERE user_id = auth.uid()
       AND role = 'admin'::public.app_role
   )
-$;
+$is_admin$;
 
 REVOKE ALL ON FUNCTION public.is_admin() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated;
