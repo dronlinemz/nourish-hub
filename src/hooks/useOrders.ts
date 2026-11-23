@@ -27,10 +27,10 @@ export const useOrders = () => {
     queryFn: async (): Promise<Order[]> => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*")
+        .select("*, order_items(*)")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []).map((row) => mapOrder(row));
+      return (data ?? []).map((row) => mapOrder(row, (row.order_items ?? []).map((item: any) => ({\n        product: { id: item.product_id, name: item.product_name, price: Number(item.product_price) } as CartItem["product"],\n        quantity: Number(item.quantity),\n      }))));
     },
   });
 };
@@ -83,7 +83,7 @@ export const useCreateOrder = () => {
         .from("order_items")
         .insert(orderItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {\n        await supabase.from("orders").delete().eq("id", orderId);\n        throw itemsError;\n      }
 
       return { ...order, id: orderId, createdAt };
     },
